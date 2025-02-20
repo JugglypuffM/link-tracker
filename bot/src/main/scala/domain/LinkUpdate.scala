@@ -15,14 +15,14 @@ final case class LinkUpdate(
 object LinkUpdate {
   given JsonReader[LinkUpdate] = JsonReader.builder
     .addField[Long]("id")
-    .addField[Uri]("uri")
+    .addField[Uri]("url")
     .addField[String]("description")
     .addField[List[Long]]("tgChatIds")
     .buildReader(LinkUpdate.apply)
 
   given JsonWriter[LinkUpdate] = JsonWriter.obj[LinkUpdate]
     .addField("id")(_.id)
-    .addField("uri")(_.url.toString)
+    .addField("url")(_.url.toString)
     .addField("description")(_.description)
     .addField("tgChatIds")(_.tgChatIds)
 }
