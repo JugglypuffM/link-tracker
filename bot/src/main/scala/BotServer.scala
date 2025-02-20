@@ -6,7 +6,7 @@ import org.http4s.server.Router
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
-object Main extends IOApp {
+object BotServer extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     val endpoints = UpdateController().endpoints
     val swagger   = SwaggerInterpreter().fromServerEndpoints(endpoints, "LinkUpdateService", "0.0.1")
