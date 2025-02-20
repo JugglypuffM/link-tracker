@@ -9,6 +9,6 @@ class UpdateController {
     linkUpdate => IO(Right(()))
   }
 
-  val endpoints: List[ServerEndpoint[Any, IO]] = List(update)
+  val endpoints: List[ServerEndpoint[Any, IO]] = List(update).map(_.withTag("Links"))
 }
 
