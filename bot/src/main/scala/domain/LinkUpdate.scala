@@ -3,7 +3,7 @@ package domain
 import domain.UriReader.given
 import sttp.model.Uri
 import sttp.tapir.Schema
-import tethys.{JsonReader, JsonWriter} 
+import tethys.{JsonReader, JsonWriter}
 
 final case class LinkUpdate(
     id: Long,

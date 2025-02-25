@@ -11,7 +11,7 @@ case class ApiErrorResponse(
     stacktrace: List[String]
 ) derives Schema
 
-object ApiErrorResponse{
+object ApiErrorResponse {
   given JsonReader[ApiErrorResponse] = JsonReader.builder
     .addField[String]("description")
     .addField[String]("code")
