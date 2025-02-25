@@ -11,8 +11,10 @@ object LinksEndpoints {
       .summary("Получить все отслеживаемые ссылки")
       .in("links")
       .in(header[Long]("Tg-Chat-Id"))
-      .out(statusCode(StatusCode.Ok).and(jsonBody[LinkListResponse]))
-      .errorOut(statusCode(StatusCode.BadRequest).and(jsonBody[ApiErrorResponse]))
+      .out(statusCode(StatusCode.Ok).description("Ссылки успешно получены").and(jsonBody[LinkListResponse]))
+      .errorOut(
+        statusCode(StatusCode.BadRequest).description("Некорректные параметры запроса").and(jsonBody[ApiErrorResponse])
+      )
 
   val postEndpoint: Endpoint[Unit, (Long, AddLinkRequest), ApiErrorResponse, LinkResponse, Any] =
     endpoint.post
@@ -20,17 +22,22 @@ object LinksEndpoints {
       .in("links")
       .in(header[Long]("Tg-Chat-Id"))
       .in(jsonBody[AddLinkRequest])
-      .out(statusCode(StatusCode.Ok).and(jsonBody[LinkResponse]))
-      .errorOut(statusCode(StatusCode.BadRequest).and(jsonBody[ApiErrorResponse]))
+      .out(statusCode(StatusCode.Ok).description("Ссылка успешно добавлена").and(jsonBody[LinkResponse]))
+      .errorOut(statusCode(StatusCode.BadRequest).description("Некорректные параметры запроса").and(
+        jsonBody[ApiErrorResponse]
+      ))
 
-  val deleteEndpoint
-      : Endpoint[Unit, (Long, RemoveLinkRequest), (ApiErrorResponse, ApiErrorResponse), LinkResponse, Any] =
+  val deleteEndpoint: Endpoint[Unit, (Long, RemoveLinkRequest), ApiErrorResponse, LinkResponse, Any] =
     endpoint.delete
       .summary("Убрать отслеживание ссылки")
       .in("links")
       .in(header[Long]("Tg-Chat-Id"))
       .in(jsonBody[RemoveLinkRequest])
-      .out(statusCode(StatusCode.Ok).and(jsonBody[LinkResponse]))
-      .errorOut(statusCode(StatusCode.BadRequest).and(jsonBody[ApiErrorResponse]))
-      .errorOut(statusCode(StatusCode.NotFound).and(jsonBody[ApiErrorResponse]))
+      .out(statusCode(StatusCode.Ok).description("Ссылка успешно убрана").and(jsonBody[LinkResponse]))
+      .errorOut(oneOf(
+        oneOfVariant(statusCode(StatusCode.BadRequest).description("Некорректные параметры запроса").and(
+          jsonBody[ApiErrorResponse]
+        )),
+        oneOfVariant(statusCode(StatusCode.NotFound).description("Ссылка не найдена").and(jsonBody[ApiErrorResponse]))
+      ))
 }
