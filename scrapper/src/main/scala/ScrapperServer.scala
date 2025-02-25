@@ -1,18 +1,25 @@
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ExitCode, IO, IOApp, Ref}
 import com.comcast.ip4s.{Host, Port}
 import controller.{LinksController, TgChatController}
+import domain.LinkResponse
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
+import repository.ChatRepository
+import service.ChatService
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 object ScrapperServer extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
-    val endpoints = LinksController().endpoints ++ TgChatController().endpoints
-    val swagger   = SwaggerInterpreter().fromServerEndpoints(endpoints, "ScrapperService", "0.0.1")
-    val routes    = Http4sServerInterpreter[IO]().toRoutes(endpoints ++ swagger)
-
     for {
+      repo <- Ref.of[IO, (Map[Long, Set[LinkResponse]], Map[Long, Set[Long]])]((Map.empty, Map.empty))
+      chatRepository = ChatRepository.make(repo)
+      chatService = ChatService.make(chatRepository)
+
+      endpoints = LinksController().endpoints ++ TgChatController(chatService).endpoints
+      swagger   = SwaggerInterpreter().fromServerEndpoints(endpoints, "ScrapperService", "0.0.1")
+      routes    = Http4sServerInterpreter[IO]().toRoutes(endpoints ++ swagger)
+
       _ <-
         EmberServerBuilder
           .default[IO]
