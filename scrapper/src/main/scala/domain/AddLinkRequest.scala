@@ -11,7 +11,7 @@ case class AddLinkRequest(
     filters: List[String]
 ) derives Schema
 
-object AddLinkRequest{
+object AddLinkRequest {
   given JsonReader[AddLinkRequest] = JsonReader.builder
     .addField[Uri]("url")
     .addField[List[String]]("tags")

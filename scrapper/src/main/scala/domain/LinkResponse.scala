@@ -6,7 +6,7 @@ import sttp.tapir.Schema
 import tethys.{JsonReader, JsonWriter}
 import tethys.readers.FieldName
 import tethys.readers.tokens.TokenIterator
-import UriReader.given 
+import UriReader.given
 
 case class LinkResponse(
     id: Long,
@@ -15,7 +15,7 @@ case class LinkResponse(
     filters: List[String]
 ) derives Schema
 
-object LinkResponse{
+object LinkResponse {
   given JsonReader[LinkResponse] = JsonReader.builder
     .addField[Long]("id")
     .addField[Uri]("uri")

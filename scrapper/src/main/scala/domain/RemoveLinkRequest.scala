@@ -3,13 +3,13 @@ package domain
 import sttp.model.Uri
 import sttp.tapir.Schema
 import tethys.{JsonReader, JsonWriter}
-import UriReader.given 
+import UriReader.given
 
 case class RemoveLinkRequest(
     link: Uri
 ) derives Schema
 
-object RemoveLinkRequest{
+object RemoveLinkRequest {
   given JsonReader[RemoveLinkRequest] = JsonReader.builder
     .addField[Uri]("link")
     .buildReader(RemoveLinkRequest.apply)

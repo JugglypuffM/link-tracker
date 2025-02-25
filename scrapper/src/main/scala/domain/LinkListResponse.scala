@@ -9,7 +9,7 @@ case class LinkListResponse(
     size: Int
 ) derives Schema
 
-object LinkListResponse{
+object LinkListResponse {
   given JsonReader[LinkListResponse] = JsonReader.builder
     .addField[List[LinkResponse]]("links")
     .addField[Int]("size")
