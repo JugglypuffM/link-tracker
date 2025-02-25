@@ -10,7 +10,9 @@ object UpdateEndpoints {
     .summary("Отправить обновление")
     .in("updates")
     .in(jsonBody[LinkUpdate])
-    .out(statusCode(StatusCode.Ok))
-    .errorOut(statusCode(StatusCode.BadRequest).and(jsonBody[ApiErrorResponse]))
+    .out(statusCode(StatusCode.Ok).description("Обновление обработано"))
+    .errorOut(statusCode(StatusCode.BadRequest).description("Некорректные параметры запроса").and(
+      jsonBody[ApiErrorResponse]
+    ))
 
 }
