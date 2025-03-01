@@ -12,20 +12,19 @@ object ChatRepository {
   class ChatNotFoundException extends Exception
 
   final private class ImMemory(
-      repo: Ref[IO, (Map[Long, Set[LinkResponse]], Map[Long, Set[Long]])]
+                                repo: Ref[IO, InMemoryRepo]
   ) extends ChatRepository[IO] {
     override def create(id: Long): IO[Unit] =
-      repo.update(data => (data._1 + (id -> Set.empty), data._2))
+      repo.update(r => InMemoryRepo(r.links, r.chatToLinks + (id -> Set.empty), r.linkToChats))
 
     override def delete(id: Long): IO[Unit] =
-      for {
-        data <- repo.get
-        elem = data._1.find(id == _._1)
-        _ <- elem match
-          case Some((id, _)) => repo.update(data => (data._1 - id, data._2))
-          case None          => IO.raiseError(ChatNotFoundException())
-      } yield ()
+      repo.get.flatMap { r =>
+        r.chatToLinks.find(id == _._1) match
+          case Some((id, _)) => repo.update(data => InMemoryRepo(data.links, data.chatToLinks - id, data.linkToChats))
+          case None => IO.raiseError(ChatNotFoundException())
+      }
+        
   }
 
-  def make(repo: Ref[IO, (Map[Long, Set[LinkResponse]], Map[Long, Set[Long]])]): ChatRepository[IO] = ImMemory(repo)
+  def make(repo: Ref[IO, InMemoryRepo]): ChatRepository[IO] = ImMemory(repo)
 }

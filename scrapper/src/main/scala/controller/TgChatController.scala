@@ -14,12 +14,10 @@ class TgChatController(
     TgChatEndpoints.registerEndpoint.serverLogic(id =>
       chatService.register(id).attempt.map {
         case Left(err) =>
-          Left(ApiErrorResponse(
-            "Unexpected error",
-            "400",
-            err.getClass.getSimpleName,
-            err.getMessage,
-            err.getStackTrace.toList.map(_.toString)
+          Left(ApiErrorResponse.fromException(
+            "Invalid parameters",
+            "BAD_REQUEST",
+            err
           ))
         case Right(v) => Right(v)
       }
@@ -29,21 +27,17 @@ class TgChatController(
     TgChatEndpoints.deleteEndpoint.serverLogic(id =>
       chatService.delete(id).attempt.map {
         case Left(err: ChatNotFoundException) =>
-          Left(ApiErrorResponse(
+          Left(ApiErrorResponse.fromException(
             "Chat with provided id was not found",
-            "404",
-            err.getClass.getSimpleName,
-            err.getMessage,
-            err.getStackTrace.toList.map(_.toString)
+            "NOT_FOUND",
+            err
           ))
 
         case Left(err) =>
-          Left(ApiErrorResponse(
-            "Unexpected error",
-            "400",
-            err.getClass.getSimpleName,
-            err.getMessage,
-            err.getStackTrace.toList.map(_.toString)
+          Left(ApiErrorResponse.fromException(
+            "Invalid parameters",
+            "BAD_REQUEST",
+            err
           ))
 
         case Right(v) => Right(v)
