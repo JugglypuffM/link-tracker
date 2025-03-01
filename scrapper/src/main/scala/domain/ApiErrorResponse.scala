@@ -26,4 +26,13 @@ object ApiErrorResponse {
     .addField("exceptionName")(_.exceptionName)
     .addField("exceptionMessage")(_.exceptionMessage)
     .addField("stacktrace")(_.stacktrace)
+
+  def fromException(description: String, code: String, err: Throwable): ApiErrorResponse =
+    ApiErrorResponse(
+      description,
+      code,
+      err.getClass.getSimpleName,
+      err.getMessage,
+      err.getStackTrace.toList.map(_.toString)
+    )
 }
