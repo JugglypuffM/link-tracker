@@ -25,13 +25,13 @@ object LinkService {
       } yield linkResponse
 
     def deleteTrackingForChat(id: Long, link: Uri): IO[LinkResponse] =
-      for{
+      for {
         response <- repo.getLinkByUrl(link)
-        _ <- repo.deleteLink(id, link)
+        _        <- repo.deleteLink(id, link)
       } yield response
   }
-  
+
   def make(repo: LinkRepository[IO]): IO[LinkService[IO]] =
     for ref <- Ref.of[IO, Long](0)
-    yield Impl(repo, ref) 
+    yield Impl(repo, ref)
 }

@@ -23,14 +23,14 @@ object LinkRepository {
     def getLinks(id: Long): IO[List[LinkResponse]] =
       repo.get.map(r =>
         if (!r.chatToLinks.contains(id)) throw ChatNotFoundException()
-        
+
         r.chatToLinks(id).toList.map(r.links(_))
       )
 
     def addLink(id: Long, link: LinkResponse): IO[Unit] =
       repo.update(r =>
         if (!r.chatToLinks.contains(id)) throw ChatNotFoundException()
-        
+
         InMemoryRepo(
           r.links + (link.url       -> link),
           r.chatToLinks + (id       -> Set(link.url)),
@@ -44,11 +44,9 @@ object LinkRepository {
         if (!chatLinks.contains(link)) throw LinkNotFoundException()
 
         InMemoryRepo(
-          if ((r.chatToLinks(id) - link).isEmpty) r.links - link 
+          if ((r.chatToLinks(id) - link).isEmpty) r.links - link
           else r.links,
-          
           r.chatToLinks.updated(id, r.chatToLinks(id) - link),
-          
           if ((r.linkToChats(link) - id).isEmpty) r.linkToChats - link
           else r.linkToChats.updated(link, r.linkToChats(link) - id)
         )

@@ -14,7 +14,7 @@ object ScrapperServer extends IOApp {
     for {
       repo <- Ref.of[IO, InMemoryRepo](InMemoryRepo(Map.empty, Map.empty, Map.empty))
       chatRepository = ChatRepository.makeInMemory(repo)
-      chatService = ChatService.make(chatRepository)
+      chatService    = ChatService.make(chatRepository)
 
       linkRepository = LinkRepository.makeInMemory(repo)
       linkService <- LinkService.make(linkRepository)
