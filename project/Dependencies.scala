@@ -41,6 +41,9 @@ object Dependencies {
   val pureConfigCore    = "com.github.pureconfig" %% "pureconfig-core"           % pureConfigVersion
   val pureConfigGeneric = "com.github.pureconfig" %% "pureconfig-generic-scala3" % pureConfigVersion
 
+  // canoe
+  val canoe = "org.augustjune" %% "canoe" % "0.6.0"
+
   val allDeps: Seq[ModuleID] = Seq(
     catsCore,
     catsEffect,
@@ -57,6 +60,7 @@ object Dependencies {
     tethysJackson,
     tethysDerivation,
     pureConfigCore,
-    pureConfigGeneric
+    pureConfigGeneric,
+    canoe
   )
 }
