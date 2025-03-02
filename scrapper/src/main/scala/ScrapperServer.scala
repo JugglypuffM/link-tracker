@@ -4,8 +4,8 @@ import controller.{LinksController, TgChatController}
 import domain.LinkResponse
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
-import repository.{ChatRepository, InMemoryRepo}
-import service.ChatService
+import repository.{ChatRepository, InMemoryRepo, LinkRepository}
+import service.{ChatService, LinkService}
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
@@ -13,10 +13,13 @@ object ScrapperServer extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     for {
       repo <- Ref.of[IO, InMemoryRepo](InMemoryRepo(Map.empty, Map.empty, Map.empty))
-      chatRepository = ChatRepository.make(repo)
+      chatRepository = ChatRepository.makeInMemory(repo)
       chatService = ChatService.make(chatRepository)
 
-      endpoints = TgChatController(chatService).endpoints
+      linkRepository = LinkRepository.makeInMemory(repo)
+      linkService <- LinkService.make(linkRepository)
+
+      endpoints = LinksController(linkService).endpoints ++ TgChatController(chatService).endpoints
       swagger   = SwaggerInterpreter().fromServerEndpoints(endpoints, "ScrapperService", "0.0.1")
       routes    = Http4sServerInterpreter[IO]().toRoutes(endpoints ++ swagger)
 
