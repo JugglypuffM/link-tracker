@@ -26,8 +26,9 @@ object ScrapperServer extends IOApp {
       _ <-
         EmberServerBuilder
           .default[IO]
+          // TODO: брать с конфига
           .withHost(Host.fromString("localhost").get)
-          .withPort(Port.fromInt(8080).get)
+          .withPort(Port.fromInt(8081).get)
           .withHttpApp(Router("/" -> routes).orNotFound)
           .build
           .evalTap(server =>
