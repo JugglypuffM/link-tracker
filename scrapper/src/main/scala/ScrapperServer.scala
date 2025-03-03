@@ -1,5 +1,6 @@
 import cats.effect.{ExitCode, IO, IOApp, Ref}
 import com.comcast.ip4s.{Host, Port}
+import config.AppConfig
 import controller.{LinksController, TgChatController}
 import domain.LinkResponse
 import org.http4s.ember.server.EmberServerBuilder
@@ -12,6 +13,8 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 object ScrapperServer extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     for {
+      config <- AppConfig.load
+
       repo <- Ref.of[IO, InMemoryRepo](InMemoryRepo(Map.empty, Map.empty, Map.empty))
       chatRepository = ChatRepository.makeInMemory(repo)
       chatService    = ChatService.make(chatRepository)
@@ -27,13 +30,14 @@ object ScrapperServer extends IOApp {
         EmberServerBuilder
           .default[IO]
           // TODO: брать с конфига
-          .withHost(Host.fromString("localhost").get)
-          .withPort(Port.fromInt(8081).get)
+          .withHost(config.host)
+          .withPort(config.port)
           .withHttpApp(Router("/" -> routes).orNotFound)
           .build
           .evalTap(server =>
             IO.println(
-              s"Server available at http://localhost:${server.address.getPort}"
+              s"Server available at ${config.host}:${config.port}",
+              s"Swagger available at ${config.host}:${config.port}/docs"
             )
           )
           .useForever
