@@ -2,6 +2,8 @@ project/target
 project/project
 bot/target
 scrapper/target
+bot/src/main/resources/application.conf
+scrapper/src/main/resources/application.conf
 target
 .idea
 .bsp
