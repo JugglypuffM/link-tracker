@@ -18,7 +18,12 @@ object LinkRepository {
   final private case class InMemory(
       repo: Ref[IO, InMemoryRepo]
   ) extends LinkRepository[IO] {
-    def getLinkByUrl(url: Uri): IO[LinkResponse] = repo.get.map(r => r.links(url))
+    def getLinkByUrl(url: Uri): IO[LinkResponse] =
+      repo.get.map(r =>
+        if (!r.links.contains(url)) throw LinkNotFoundException()
+
+        r.links(url)
+      )
 
     def getLinks(id: Long): IO[List[LinkResponse]] =
       repo.get.map(r =>

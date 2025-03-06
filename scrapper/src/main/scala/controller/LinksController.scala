@@ -5,7 +5,7 @@ import controller.endpoints.LinksEndpoints
 import domain.{ApiErrorResponse, LinkListResponse, LinkResponse}
 import repository.LinkRepository.LinkNotFoundException
 import service.LinkService
-import sttp.model.Uri
+import sttp.model.StatusCode
 import sttp.tapir.server.ServerEndpoint
 
 class LinksController(linkService: LinkService[IO]) extends Controller[IO] {
@@ -39,18 +39,24 @@ class LinksController(linkService: LinkService[IO]) extends Controller[IO] {
     LinksEndpoints.deleteEndpoint.serverLogic((id, request) =>
       linkService.deleteTrackingForChat(id, request.link).attempt.map {
         case Left(err: LinkNotFoundException) =>
-          Left(ApiErrorResponse.fromException(
-            "Chat with provided id was not found",
-            "NOT_FOUND",
-            err
-          ))
+          Left(
+            StatusCode.NotFound,
+            ApiErrorResponse.fromException(
+              "Chat with provided id was not found",
+              "NOT_FOUND",
+              err
+            )
+          )
 
         case Left(err) =>
-          Left(ApiErrorResponse.fromException(
-            "Invalid parameters",
-            "BAD_REQUEST",
-            err
-          ))
+          Left(
+            StatusCode.BadRequest,
+            ApiErrorResponse.fromException(
+              "Invalid parameters",
+              "BAD_REQUEST",
+              err
+            )
+          )
 
         case Right(v) => Right(v)
       }

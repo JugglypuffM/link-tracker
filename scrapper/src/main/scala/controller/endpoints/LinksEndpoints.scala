@@ -12,8 +12,9 @@ object LinksEndpoints {
       .in("links")
       .in(header[Long]("Tg-Chat-Id"))
       .out(statusCode(StatusCode.Ok).description("Ссылки успешно получены").and(jsonBody[LinkListResponse]))
-      .errorOut(
-        statusCode(StatusCode.BadRequest).description("Некорректные параметры запроса").and(jsonBody[ApiErrorResponse])
+      .errorOut(statusCode(StatusCode.BadRequest)
+        .description("Некорректные параметры запроса")
+        .and(jsonBody[ApiErrorResponse])
       )
 
   val postEndpoint: Endpoint[Unit, (Long, AddLinkRequest), ApiErrorResponse, LinkResponse, Any] =
@@ -23,21 +24,21 @@ object LinksEndpoints {
       .in(header[Long]("Tg-Chat-Id"))
       .in(jsonBody[AddLinkRequest])
       .out(statusCode(StatusCode.Ok).description("Ссылка успешно добавлена").and(jsonBody[LinkResponse]))
-      .errorOut(statusCode(StatusCode.BadRequest).description("Некорректные параметры запроса").and(
-        jsonBody[ApiErrorResponse]
-      ))
+      .errorOut(statusCode(StatusCode.BadRequest)
+        .description("Некорректные параметры запроса")
+        .and(jsonBody[ApiErrorResponse])
+      )
 
-  val deleteEndpoint: Endpoint[Unit, (Long, RemoveLinkRequest), ApiErrorResponse, LinkResponse, Any] =
+  val deleteEndpoint: Endpoint[Unit, (Long, RemoveLinkRequest), (StatusCode, ApiErrorResponse), LinkResponse, Any] =
     endpoint.delete
       .summary("Убрать отслеживание ссылки")
       .in("links")
       .in(header[Long]("Tg-Chat-Id"))
       .in(jsonBody[RemoveLinkRequest])
       .out(statusCode(StatusCode.Ok).description("Ссылка успешно убрана").and(jsonBody[LinkResponse]))
-      .errorOut(oneOf(
-        oneOfVariant(statusCode(StatusCode.BadRequest).description("Некорректные параметры запроса").and(
-          jsonBody[ApiErrorResponse]
-        )),
-        oneOfVariant(statusCode(StatusCode.NotFound).description("Ссылка не найдена").and(jsonBody[ApiErrorResponse]))
-      ))
+      .errorOut(statusCode
+        .description(StatusCode.BadRequest, "Некорректные параметры запроса")
+        .description(StatusCode.NotFound, "Ссылка не найдена")
+        .and(jsonBody[ApiErrorResponse])
+      )
 }
