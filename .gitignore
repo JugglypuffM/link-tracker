@@ -7,3 +7,4 @@ scrapper/src/main/resources/application.conf
 target
 .idea
 .bsp
+/logs
