@@ -1,4 +1,4 @@
-import bot.{Commands, ScrapperClient}
+import bot.{Scenarios, ScrapperClient}
 import canoe.api.*
 import cats.effect.{IO, IOApp}
 import config.AppConfig
@@ -9,9 +9,15 @@ import org.http4s.server.Router
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import tofu.logging.Logging
+import tofu.syntax.logging.LoggingInterpolator
 
 object BotServer extends IOApp.Simple {
   override def run: IO[Unit] =
+    given Logging.Make[IO] = Logging.Make.plain[IO]
+
+    given Logging[IO] = Logging.Make[IO].byName("BotServer")
+
     for {
       config <- AppConfig.load
 
@@ -29,14 +35,14 @@ object BotServer extends IOApp.Simple {
         .withHttpApp(Router("/" -> routes).orNotFound)
         .build
         .evalTap(server =>
-          IO.println(s"Server available at http://${config.host}:${config.port}") *>
-            IO.println(s"Swagger available at http://${config.host}:${config.port}/docs")
+          info"Server available at http://${config.host.toString}:${config.port.toString}" *>
+            info"Swagger available at http://${config.host.toString}:${config.port.toString}/docs"
         )
         .useForever
 
       bot = Stream
         .resource(TelegramClient[IO](config.token))
-        .flatMap(implicit client => Bot.polling[IO].follow(Commands.make(scrapperClient).start))
+        .flatMap(implicit client => Bot.polling[IO].follow(Scenarios.make(scrapperClient).botScenarios *))
         .compile
         .drain
 
