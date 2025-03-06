@@ -42,7 +42,7 @@ object BotServer extends IOApp.Simple {
 
       bot = Stream
         .resource(TelegramClient[IO](config.token))
-        .flatMap(implicit client => Bot.polling[IO].follow(Scenarios.make(scrapperClient).botScenarios *))
+        .flatMap(implicit client => Bot.polling[IO].follow(Scenarios.make(scrapperClient).botScenarios*))
         .compile
         .drain
 

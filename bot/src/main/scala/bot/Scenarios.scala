@@ -33,12 +33,18 @@ object Scenarios {
         result <- Scenario.eval(scrapper.registerChat(chat.id).attempt)
         _ <- result match {
           case Right(_) =>
-            Scenario.eval(infoWith"Succeeded" ("chat-id" -> chat.id, "command" -> START) >> chat.send(REGISTRATION_SUCCESS))
+            Scenario.eval(
+              infoWith"Succeeded" ("chat-id" -> chat.id, "command" -> START) >> chat.send(REGISTRATION_SUCCESS)
+            )
           case Left(_: BadRequestException) =>
-            Scenario.eval(errorWith"Failed on scrapper" ("chat-id" -> chat.id, "command" -> START) >> chat.send(UNEXPECTED_ERROR))
+            Scenario.eval(
+              errorWith"Failed on scrapper" ("chat-id" -> chat.id, "command" -> START) >> chat.send(UNEXPECTED_ERROR)
+            )
           case Left(err) =>
             Scenario.eval(
-              errorCauseWith"Failed unexpectedly" (err)("chat-id" -> chat.id, "command" -> START) >> chat.send(UNEXPECTED_ERROR)
+              errorCauseWith"Failed unexpectedly" (err)("chat-id" -> chat.id, "command" -> START) >> chat.send(
+                UNEXPECTED_ERROR
+              )
             )
         }
       } yield ()
@@ -95,7 +101,9 @@ object Scenarios {
             )
           case Left(err) =>
             Scenario.eval(
-              errorCauseWith"Failed unexpectedly" (err)("chat-id" -> chat.id, "command" -> TRACK) >> chat.send(UNEXPECTED_ERROR)
+              errorCauseWith"Failed unexpectedly" (err)("chat-id" -> chat.id, "command" -> TRACK) >> chat.send(
+                UNEXPECTED_ERROR
+              )
             )
         }
       } yield ()
@@ -108,9 +116,13 @@ object Scenarios {
         result <- Scenario.eval(scrapper.untrackLink(chat.id, RemoveLinkRequest(url)).attempt)
         _ <- result match {
           case Right(_) =>
-            Scenario.eval(infoWith"Succeeded" ("chat-id" -> chat.id, "command" -> UNTRACK) >> chat.send(UNTRACK_SUCCESS))
+            Scenario.eval(
+              infoWith"Succeeded" ("chat-id" -> chat.id, "command" -> UNTRACK) >> chat.send(UNTRACK_SUCCESS)
+            )
           case Left(_: LinkNotFoundException) =>
-            Scenario.eval(errorWith"Link not found" ("chat-id" -> chat.id, "command" -> UNTRACK) >> chat.send(LINK_NOT_FOUND))
+            Scenario.eval(
+              errorWith"Link not found" ("chat-id" -> chat.id, "command" -> UNTRACK) >> chat.send(LINK_NOT_FOUND)
+            )
           case Left(_: BadRequestException) =>
             Scenario.eval(
               errorWith"Failed on scrapper" ("chat-id" -> chat.id, "command" -> UNTRACK) >> chat.send(UNEXPECTED_ERROR)
@@ -126,8 +138,8 @@ object Scenarios {
 
     private def list: Scenario[IO, Unit] =
       for {
-        chat <- Scenario.expect(command(LIST).chat)
-        _      <- Scenario.eval(infoWith"Handling command" ("chat-id" -> chat.id, "command" -> LIST))
+        chat          <- Scenario.expect(command(LIST).chat)
+        _             <- Scenario.eval(infoWith"Handling command" ("chat-id" -> chat.id, "command" -> LIST))
         linksResponse <- Scenario.eval(scrapper.getLinkList(chat.id).attempt)
         _ <- linksResponse match {
           case Right(_) =>
@@ -138,7 +150,9 @@ object Scenarios {
             )
           case Left(err) =>
             Scenario.eval(
-              errorCauseWith"Failed unexpectedly" (err)("chat-id" -> chat.id, "command" -> LIST) >> chat.send(UNEXPECTED_ERROR)
+              errorCauseWith"Failed unexpectedly" (err)("chat-id" -> chat.id, "command" -> LIST) >> chat.send(
+                UNEXPECTED_ERROR
+              )
             )
         }
       } yield ()

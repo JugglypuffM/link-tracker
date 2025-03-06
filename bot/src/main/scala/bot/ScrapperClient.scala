@@ -24,30 +24,31 @@ object ScrapperClient {
 
   class LinkNotFoundException extends Exception
 
-  final private class Impl(serverUrl: Uri, httpClient: Resource[IO, SttpBackend[IO, Any]])(using lm: Logging.Make[IO]) extends ScrapperClient[IO] {
+  final private class Impl(serverUrl: Uri, httpClient: Resource[IO, SttpBackend[IO, Any]])(using lm: Logging.Make[IO])
+    extends ScrapperClient[IO] {
     given Logging[IO] = Logging.Make[IO].forService[ScrapperClient[IO]]
 
     def registerChat(id: Long): IO[Unit] =
       httpClient.use { client =>
         for {
-          _ <- infoWith"Sending register request"("chat-id" -> id)
+          _ <- infoWith"Sending register request" ("chat-id" -> id)
           response <- client.send(
             emptyRequest
               .post(serverUrl.addPath("tg-chat", id.toString))
               .response(asStringAlways)
           )
 
-          _ <- infoWith"Got response ${response.toString}"("chat-id" -> id)
+          _ <- infoWith"Got response ${response.toString}" ("chat-id" -> id)
         } yield response.code match
           case StatusCode.Ok => ()
-          case _ => throw BadRequestException()
+          case _             => throw BadRequestException()
       }
 
     def trackLink(id: Long, request: AddLinkRequest): IO[Unit] =
       httpClient.use { client =>
         for {
-          _ <- infoWith"Sending track request"("chat-id" -> id)
-          
+          _ <- infoWith"Sending track request" ("chat-id" -> id)
+
           response <- client.send(
             emptyRequest
               .post(serverUrl.addPath("links"))
@@ -56,17 +57,17 @@ object ScrapperClient {
               .response(asStringAlways)
           )
 
-          _ <- infoWith"Got response ${response.toString}"("chat-id" -> id)
+          _ <- infoWith"Got response ${response.toString}" ("chat-id" -> id)
         } yield response.code match
           case StatusCode.Ok => ()
-          case _ => throw BadRequestException()
+          case _             => throw BadRequestException()
       }
 
     def untrackLink(id: Long, request: RemoveLinkRequest): IO[Unit] =
       httpClient.use { client =>
         for {
-          _ <- infoWith"Sending untrack request"("chat-id" -> id)
-          
+          _ <- infoWith"Sending untrack request" ("chat-id" -> id)
+
           response <- client.send(
             emptyRequest
               .delete(serverUrl.addPath("links"))
@@ -75,17 +76,17 @@ object ScrapperClient {
               .response(asStringAlways)
           )
 
-          _ <- infoWith"Got response ${response.toString}"("chat-id" -> id)
+          _ <- infoWith"Got response ${response.toString}" ("chat-id" -> id)
         } yield response.code match
-          case StatusCode.Ok => ()
+          case StatusCode.Ok       => ()
           case StatusCode.NotFound => throw LinkNotFoundException()
-          case _ => throw BadRequestException()
+          case _                   => throw BadRequestException()
       }
 
     def getLinkList(id: Long): IO[LinkListResponse] =
       httpClient.use { client =>
         for {
-          _ <- infoWith"Sending link list request"("chat-id" -> id)
+          _ <- infoWith"Sending link list request" ("chat-id" -> id)
 
           response <- client.send(
             emptyRequest
@@ -94,18 +95,18 @@ object ScrapperClient {
               .response(asStringAlways)
           )
 
-          _ <- infoWith"Got response ${response.toString}"("chat-id" -> id)
+          _ <- infoWith"Got response ${response.toString}" ("chat-id" -> id)
 
           links = response.body.jsonAs[LinkListResponse]
         } yield (response.code, links) match
           case (StatusCode.Ok, Right(value)) => value
-          case _ => throw BadRequestException()
+          case _                             => throw BadRequestException()
       }
   }
 
   def make(
       serverUrl: Uri,
       httpClient: Resource[IO, SttpBackend[IO, Any]]
-          )(using lm: Logging.Make[IO]): ScrapperClient[IO] =
+  )(using lm: Logging.Make[IO]): ScrapperClient[IO] =
     Impl(serverUrl, httpClient)
 }

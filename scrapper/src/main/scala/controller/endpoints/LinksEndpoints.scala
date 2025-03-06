@@ -14,8 +14,7 @@ object LinksEndpoints {
       .out(statusCode(StatusCode.Ok).description("Ссылки успешно получены").and(jsonBody[LinkListResponse]))
       .errorOut(statusCode(StatusCode.BadRequest)
         .description("Некорректные параметры запроса")
-        .and(jsonBody[ApiErrorResponse])
-      )
+        .and(jsonBody[ApiErrorResponse]))
 
   val postEndpoint: Endpoint[Unit, (Long, AddLinkRequest), ApiErrorResponse, LinkResponse, Any] =
     endpoint.post
@@ -26,8 +25,7 @@ object LinksEndpoints {
       .out(statusCode(StatusCode.Ok).description("Ссылка успешно добавлена").and(jsonBody[LinkResponse]))
       .errorOut(statusCode(StatusCode.BadRequest)
         .description("Некорректные параметры запроса")
-        .and(jsonBody[ApiErrorResponse])
-      )
+        .and(jsonBody[ApiErrorResponse]))
 
   val deleteEndpoint: Endpoint[Unit, (Long, RemoveLinkRequest), (StatusCode, ApiErrorResponse), LinkResponse, Any] =
     endpoint.delete
@@ -39,6 +37,5 @@ object LinksEndpoints {
       .errorOut(statusCode
         .description(StatusCode.BadRequest, "Некорректные параметры запроса")
         .description(StatusCode.NotFound, "Ссылка не найдена")
-        .and(jsonBody[ApiErrorResponse])
-      )
+        .and(jsonBody[ApiErrorResponse]))
 }

@@ -28,18 +28,24 @@ class TgChatController(
     TgChatEndpoints.deleteEndpoint.serverLogic(id =>
       chatService.delete(id).attempt.map {
         case Left(err: ChatNotFoundException) =>
-          Left(StatusCode.NotFound, ApiErrorResponse.fromException(
-            "Chat with provided id was not found",
-            "NOT_FOUND",
-            err
-          ))
+          Left(
+            StatusCode.NotFound,
+            ApiErrorResponse.fromException(
+              "Chat with provided id was not found",
+              "NOT_FOUND",
+              err
+            )
+          )
 
         case Left(err) =>
-          Left(StatusCode.BadRequest, ApiErrorResponse.fromException(
-            "Invalid parameters",
-            "BAD_REQUEST",
-            err
-          ))
+          Left(
+            StatusCode.BadRequest,
+            ApiErrorResponse.fromException(
+              "Invalid parameters",
+              "BAD_REQUEST",
+              err
+            )
+          )
 
         case Right(v) => Right(v)
       }

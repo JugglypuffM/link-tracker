@@ -13,8 +13,7 @@ object TgChatEndpoints {
       .out(statusCode(StatusCode.Ok).description("Чат успешно зарегистрирован"))
       .errorOut(statusCode(StatusCode.BadRequest)
         .description("Некорректные параметры запроса")
-        .and(jsonBody[ApiErrorResponse])
-      )
+        .and(jsonBody[ApiErrorResponse]))
 
   val deleteEndpoint: Endpoint[Unit, Long, (StatusCode, ApiErrorResponse), Unit, Any] =
     endpoint.delete
@@ -24,6 +23,5 @@ object TgChatEndpoints {
       .errorOut(statusCode
         .description(StatusCode.BadRequest, "Некорректные параметры запроса")
         .description(StatusCode.NotFound, "Чат не существует")
-        .and(jsonBody[ApiErrorResponse])
-      )
+        .and(jsonBody[ApiErrorResponse]))
 }
