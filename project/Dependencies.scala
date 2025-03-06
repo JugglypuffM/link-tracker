@@ -28,6 +28,13 @@ object Dependencies {
   // logback
   val logback = "ch.qos.logback" % "logback-classic" % "1.5.16"
 
+  // tofu
+  val tofuVersion = "0.13.6"
+
+  val tofuLogging = "tf.tofu" %% "tofu-logging" % tofuVersion
+  val tofuLoggingDerivation = "tf.tofu" %% "tofu-logging-derivation" % tofuVersion
+  val tofuCore = "tf.tofu" %% "tofu-core-ce3" % tofuVersion
+
   // tethys
   val tethysVersion = "0.29.3"
 
@@ -56,6 +63,9 @@ object Dependencies {
     sttpCore,
     sttpCats,
     logback,
+    tofuLogging,
+    tofuLoggingDerivation,
+    tofuCore,
     tethysCore,
     tethysJackson,
     tethysDerivation,
