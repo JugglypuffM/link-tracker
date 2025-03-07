@@ -3,7 +3,6 @@ import canoe.api.*
 import cats.effect.{IO, IOApp}
 import config.AppConfig
 import controller.UpdateController
-import fs2.Stream
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
@@ -21,31 +20,32 @@ object BotServer extends IOApp.Simple {
     for {
       config <- AppConfig.load
 
-      endpoints = UpdateController().endpoints
-      swagger   = SwaggerInterpreter().fromServerEndpoints(endpoints, "LinkUpdateService", "0.0.1")
-      routes    = Http4sServerInterpreter[IO]().toRoutes(endpoints ++ swagger)
+      tgClient = TelegramClient[IO](config.token)
 
       httpClient     = HttpClientCatsBackend.resource[IO]()
       scrapperClient = ScrapperClient.make(config.scrapperUrl, httpClient)
 
-      server = EmberServerBuilder
-        .default[IO]
-        .withHost(config.host)
-        .withPort(config.port)
-        .withHttpApp(Router("/" -> routes).orNotFound)
-        .build
-        .evalTap(server =>
-          info"Server available at http://${config.host.toString}:${config.port.toString}" *>
-            info"Swagger available at http://${config.host.toString}:${config.port.toString}/docs"
-        )
-        .useForever
+      _ <- tgClient.use(implicit client =>
+        val scenarios = Scenarios.make(scrapperClient)
+        val endpoints = UpdateController(scenarios.sendUpdate).endpoints
+        val swagger   = SwaggerInterpreter().fromServerEndpoints(endpoints, "LinkUpdateService", "0.0.1")
+        val routes    = Http4sServerInterpreter[IO]().toRoutes(endpoints ++ swagger)
 
-      bot = Stream
-        .resource(TelegramClient[IO](config.token))
-        .flatMap(implicit client => Bot.polling[IO].follow(Scenarios.make(scrapperClient).botScenarios*))
-        .compile
-        .drain
+        val server = EmberServerBuilder
+          .default[IO]
+          .withHost(config.host)
+          .withPort(config.port)
+          .withHttpApp(Router("/" -> routes).orNotFound)
+          .build
+          .evalTap(server =>
+            info"Server available at http://${config.host.toString}:${config.port.toString}" *>
+              info"Swagger available at http://${config.host.toString}:${config.port.toString}/docs"
+          )
+          .useForever
 
-      _ <- server &> bot
+        val bot = Bot.polling[IO].follow(scenarios.botScenarios*).compile.drain
+
+        server &> bot
+      )
     } yield ()
 }

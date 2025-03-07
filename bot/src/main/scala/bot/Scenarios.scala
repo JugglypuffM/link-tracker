@@ -4,11 +4,12 @@ import bot.Commands.*
 import bot.Replies.*
 import bot.ScrapperClient.{BadRequestException, LinkNotFoundException}
 import canoe.api.*
+import canoe.methods.messages.SendMessage
 import canoe.models.Chat
 import canoe.models.messages.TextMessage
 import canoe.syntax.*
 import cats.effect.IO
-import domain.{AddLinkRequest, RemoveLinkRequest}
+import domain.{AddLinkRequest, LinkUpdate, RemoveLinkRequest}
 import sttp.client3.UriContext
 import sttp.model.Uri
 import tofu.logging.Logging
@@ -16,6 +17,7 @@ import tofu.syntax.logging.LoggingInterpolator
 
 trait Scenarios[F[_]] {
   def botScenarios: List[Scenario[F, Unit]]
+  def sendUpdate(id: Long, update: LinkUpdate): IO[Unit]
 }
 
 object Scenarios {
@@ -155,6 +157,12 @@ object Scenarios {
               )
             )
         }
+      } yield ()
+
+    def sendUpdate(id: Long, update: LinkUpdate): IO[Unit] =
+      for {
+        msg <- SendMessage(id, LINK_UPDATE(update)).call
+        _ <- infoWith"Update sent" ("chat-id" -> id, "link" -> update.url.toString, "description" -> update.description)
       } yield ()
 
     val botScenarios: List[Scenario[IO, Unit]] =

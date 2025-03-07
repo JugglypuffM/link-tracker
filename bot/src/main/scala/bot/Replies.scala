@@ -1,5 +1,7 @@
 package bot
 
+import domain.LinkUpdate
+
 object Replies {
   val REGISTRATION_SUCCESS = "Регистрация успешна"
 
@@ -23,6 +25,9 @@ object Replies {
   val LINK_NOT_FOUND = " Ссылка не найдена"
 
   val UNEXPECTED_ERROR = "Произошла непредвиденная ошибка"
+
+  def LINK_UPDATE(update: LinkUpdate): String =
+    s"По ссылке ${update.url} пришло обновление: ${update.description}"
   //  Пока нереализуемо
   //  val UNKNOWN_COMMAND = "Неизвестная команда"
   //  val SCENARIO_INTERRUPTION = "Выполнение прервано"
