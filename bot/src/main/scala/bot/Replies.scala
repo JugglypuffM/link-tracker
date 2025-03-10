@@ -1,6 +1,6 @@
 package bot
 
-import domain.LinkUpdate
+import domain.{LinkResponse, LinkUpdate}
 
 object Replies {
   val REGISTRATION_SUCCESS = "Регистрация успешна"
@@ -28,6 +28,11 @@ object Replies {
 
   def LINK_UPDATE(update: LinkUpdate): String =
     s"По ссылке ${update.url} пришло обновление: ${update.description}"
+
+  def LINK_LIST_ENTRY(link: LinkResponse): String =
+    s"Ссылка: ${link.url}" + System.lineSeparator() +
+      s"Тэги: ${link.tags.mkString(", ")}" + System.lineSeparator() +
+      s"Фильтры: ${link.filters.mkString(", ")}"
   //  Пока нереализуемо
   //  val UNKNOWN_COMMAND = "Неизвестная команда"
   //  val SCENARIO_INTERRUPTION = "Выполнение прервано"

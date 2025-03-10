@@ -9,6 +9,7 @@ import canoe.models.Chat
 import canoe.models.messages.TextMessage
 import canoe.syntax.*
 import cats.effect.IO
+import cats.syntax.all.*
 import domain.{AddLinkRequest, LinkUpdate, RemoveLinkRequest}
 import sttp.client3.UriContext
 import sttp.model.Uri
@@ -144,8 +145,8 @@ object Scenarios {
         _             <- Scenario.eval(infoWith"Handling command" ("chat-id" -> chat.id, "command" -> LIST))
         linksResponse <- Scenario.eval(scrapper.getLinkList(chat.id).attempt)
         _ <- linksResponse match {
-          case Right(_) =>
-            Scenario.eval(infoWith"Succeeded" ("chat-id" -> chat.id, "command" -> LIST) >> chat.send(TRACK_SUCCESS))
+          case Right(response) =>
+            Scenario.eval(infoWith"Succeeded"("chat-id" -> chat.id, "command" -> LIST) >> response.links.traverse_(link => chat.send(LINK_LIST_ENTRY(link))))
           case Left(_: BadRequestException) =>
             Scenario.eval(
               errorWith"Failed on scrapper" ("chat-id" -> chat.id, "command" -> LIST) >> chat.send(UNEXPECTED_ERROR)
