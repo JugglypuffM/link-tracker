@@ -1,37 +1,42 @@
 package service
 
-import cats.effect.{IO, Ref}
-import domain.{AddLinkRequest, LinkResponse}
-import repository.LinkRepository
-import sttp.model.Uri
+import cats.effect.IO
+import cats.implicits.toTraverseOps
+import domain.link.Settings
+import http.protocol.{AddLinkRequest, LinkResponse, RemoveLinkRequest}
+import repository.{ChatRepository, LinkRepository}
 
 trait LinkService[F[_]] {
-  def getAllLinks(id: Long): F[List[LinkResponse]]
-  def trackLinkByChat(id: Long, link: AddLinkRequest): F[LinkResponse]
-  def deleteTrackingForChat(id: Long, link: Uri): F[LinkResponse]
+  def getLinksForChat(chatId: Long): F[List[LinkResponse]]
+  def trackLinkByChat(chatId: Long, request: AddLinkRequest): F[LinkResponse]
+  def deleteTrackingForChat(chatId: Long, request: RemoveLinkRequest): F[LinkResponse]
 }
 
 object LinkService {
-  final private class Impl(repo: LinkRepository[IO], lastIdRef: Ref[IO, Long]) extends LinkService[IO] {
-
-    def getAllLinks(id: Long): IO[List[LinkResponse]] = repo.getLinks(id)
-
-    def trackLinkByChat(id: Long, link: AddLinkRequest): IO[LinkResponse] =
+  final private class Impl(using
+                            linkRepo: LinkRepository[IO], 
+                            chatRepo: ChatRepository[IO],
+                          ) extends LinkService[IO] {
+    override def getLinksForChat(chatId: Long): IO[List[LinkResponse]] =
+      for{
+        urls <- chatRepo.allLinksFor(chatId)
+        links <- urls.traverse(url => linkRepo.get(chatId, url))
+        responses = links.map(info => LinkResponse(info.link.id, info.link.url, info.settings.tags, info.settings.filters))
+      } yield responses
+      
+    
+    override def trackLinkByChat(chatId: Long, request: AddLinkRequest): IO[LinkResponse] =
       for {
-        lastId <- lastIdRef.get
-        linkResponse = LinkResponse(lastId + 1, link.url, link.tags, link.filters)
-        _ <- repo.addLink(id, linkResponse)
-        _ <- lastIdRef.update(_ + 1)
-      } yield linkResponse
+        link <- linkRepo.save(chatId, request.url, Settings(request.tags, request.filters))
+        _ <- chatRepo.addLink(chatId, request.url)
+      } yield link.toLinkResponse
 
-    def deleteTrackingForChat(id: Long, link: Uri): IO[LinkResponse] =
+    override def deleteTrackingForChat(chatId: Long, request: RemoveLinkRequest): IO[LinkResponse] =
       for {
-        response <- repo.getLinkByUrl(link)
-        _        <- repo.deleteLink(id, link)
-      } yield response
+        link <- linkRepo.delete(chatId, request.link)
+        _ <- chatRepo.removeLink(chatId, request.link)
+      } yield link.toLinkResponse
   }
 
-  def make(repo: LinkRepository[IO]): IO[LinkService[IO]] =
-    for ref <- Ref.of[IO, Long](0)
-    yield Impl(repo, ref)
+  def make(using LinkRepository[IO], ChatRepository[IO]): LinkService[IO] = Impl()
 }

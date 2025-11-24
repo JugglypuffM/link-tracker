@@ -51,6 +51,9 @@ object Dependencies {
   // canoe
   val canoe = "org.augustjune" %% "canoe" % "0.6.0"
 
+  //quartz4s
+  val quartz4s = "com.itv" %% "quartz4s-core" % "1.0.0"
+
   val allDeps: Seq[ModuleID] = Seq(
     catsCore,
     catsEffect,
@@ -71,6 +74,7 @@ object Dependencies {
     tethysDerivation,
     pureConfigCore,
     pureConfigGeneric,
-    canoe
+    canoe,
+    quartz4s,
   )
 }

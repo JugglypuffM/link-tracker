@@ -9,11 +9,11 @@ trait ChatService[F[_]] {
 }
 
 object ChatService {
-  final private class Impl(repo: ChatRepository[IO]) extends ChatService[IO] {
-    override def register(chatId: Long): IO[Unit] = repo.create(chatId)
+  final private class Impl(using repo: ChatRepository[IO]) extends ChatService[IO] {
+    override def register(chatId: Long): IO[Unit] = repo.save(chatId)
 
     override def delete(chatId: Long): IO[Unit] = repo.delete(chatId)
   }
 
-  def make(repository: ChatRepository[IO]): ChatService[IO] = Impl(repository)
+  def make(using ChatRepository[IO]): ChatService[IO] = Impl()
 }

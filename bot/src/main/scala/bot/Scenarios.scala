@@ -2,7 +2,6 @@ package bot
 
 import bot.Commands.*
 import bot.Replies.*
-import bot.ScrapperClient.{BadRequestException, LinkNotFoundException}
 import canoe.api.*
 import canoe.methods.messages.SendMessage
 import canoe.models.Chat
@@ -10,7 +9,9 @@ import canoe.models.messages.TextMessage
 import canoe.syntax.*
 import cats.effect.IO
 import cats.syntax.all.*
-import domain.{AddLinkRequest, LinkUpdate, RemoveLinkRequest}
+import http.clients.ScrapperClient
+import ScrapperClient.{BadRequestException, LinkNotFoundException}
+import http.protocol.{AddLinkRequest, LinkUpdate, RemoveLinkRequest}
 import sttp.client3.UriContext
 import sttp.model.Uri
 import tofu.logging.Logging
@@ -22,7 +23,7 @@ trait Scenarios[F[_]] {
 }
 
 object Scenarios {
-  final private class Impl(scrapper: ScrapperClient[IO])(using c: TelegramClient[IO], lm: Logging.Make[IO])
+  final private class Impl(using scrapper: ScrapperClient[IO], c: TelegramClient[IO], lm: Logging.Make[IO])
     extends Scenarios[IO] {
     given Logging[IO] = Logging.Make[IO].forService[Scenarios[IO]]
 
@@ -170,6 +171,6 @@ object Scenarios {
       List(start, help, track, untrack, list)
   }
 
-  def make(scrapper: ScrapperClient[IO])(using c: TelegramClient[IO], lm: Logging.Make[IO]): Scenarios[IO] =
-    Impl(scrapper)
+  def make(using ScrapperClient[IO], TelegramClient[IO], Logging.Make[IO]): Scenarios[IO] =
+    Impl()
 }

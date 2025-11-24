@@ -1,6 +1,6 @@
 package bot
 
-import domain.{LinkResponse, LinkUpdate}
+import http.protocol.{LinkResponse, LinkUpdate}
 
 object Replies {
   val REGISTRATION_SUCCESS = "Регистрация успешна"

@@ -1,10 +1,13 @@
-import bot.{Scenarios, ScrapperClient}
+import bot.Scenarios
 import canoe.api.*
-import cats.effect.{IO, IOApp}
+import cats.effect.{IO, IOApp, Resource}
 import config.AppConfig
-import controller.UpdateController
+import http.clients.ScrapperClient
+import http.controller.UpdateController
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
+import service.UpdateService
+import sttp.client3.SttpBackend
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
@@ -13,39 +16,35 @@ import tofu.syntax.logging.LoggingInterpolator
 
 object BotServer extends IOApp.Simple {
   override def run: IO[Unit] =
-    given Logging.Make[IO] = Logging.Make.plain[IO]
+    val app: Resource[IO, Unit] = for {
+      config <- Resource.eval(AppConfig.load)
+      given AppConfig = config
+      given Logging.Make[IO] = Logging.Make.plain[IO]
+      given Logging[IO] = Logging.Make[IO].byName("BotServer")
+      
+      given TelegramClient[IO] <- TelegramClient[IO](config.token)
+      given SttpBackend[IO, Any]     <- HttpClientCatsBackend.resource[IO]()
+      given ScrapperClient[IO] = ScrapperClient.make
 
-    given Logging[IO] = Logging.Make[IO].byName("BotServer")
+      scenarios = Scenarios.make
+      updateService = UpdateService()
+      endpoints = UpdateController(updateService).endpoints
+      swagger   = SwaggerInterpreter().fromServerEndpoints(endpoints, "LinkUpdateService", "0.0.1")
+      routes    = Http4sServerInterpreter[IO]().toRoutes(endpoints ++ swagger)
 
-    for {
-      config <- AppConfig.load
+      server <- EmberServerBuilder
+        .default[IO]
+        .withHost(config.host)
+        .withPort(config.port)
+        .withHttpApp(Router("/" -> routes).orNotFound)
+        .build
+        .evalTap(server =>
+          info"Server available at http://${config.host.toString}:${config.port.toString}" *>
+            info"Swagger available at http://${config.host.toString}:${config.port.toString}/docs"
+        )
 
-      tgClient = TelegramClient[IO](config.token)
-
-      httpClient     = HttpClientCatsBackend.resource[IO]()
-      scrapperClient = ScrapperClient.make(config.scrapperUrl, httpClient)
-
-      _ <- tgClient.use(implicit client =>
-        val scenarios = Scenarios.make(scrapperClient)
-        val endpoints = UpdateController(scenarios.sendUpdate).endpoints
-        val swagger   = SwaggerInterpreter().fromServerEndpoints(endpoints, "LinkUpdateService", "0.0.1")
-        val routes    = Http4sServerInterpreter[IO]().toRoutes(endpoints ++ swagger)
-
-        val server = EmberServerBuilder
-          .default[IO]
-          .withHost(config.host)
-          .withPort(config.port)
-          .withHttpApp(Router("/" -> routes).orNotFound)
-          .build
-          .evalTap(server =>
-            info"Server available at http://${config.host.toString}:${config.port.toString}" *>
-              info"Swagger available at http://${config.host.toString}:${config.port.toString}/docs"
-          )
-          .useForever
-
-        val bot = Bot.polling[IO].follow(scenarios.botScenarios*).compile.drain
-
-        server &> bot
-      )
+      _ <- Resource.eval(Bot.polling[IO].follow(scenarios.botScenarios*).compile.drain)
     } yield ()
+    
+    app.useForever
 }

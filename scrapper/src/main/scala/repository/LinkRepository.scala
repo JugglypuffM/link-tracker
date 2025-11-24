@@ -1,63 +1,73 @@
 package repository
 
 import cats.effect.{IO, Ref}
-import domain.LinkResponse
-import repository.ChatRepository.ChatNotFoundException
+import domain.link.{Link, LinkInfo, Settings}
+import repository.error.{LinkNotFound, SaveError}
 import sttp.model.Uri
 
+import scala.util.control.NoStackTrace
+
 trait LinkRepository[F[_]] {
-  def getLinkByUrl(url: Uri): F[LinkResponse]
-  def getLinks(id: Long): F[List[LinkResponse]]
-  def addLink(id: Long, link: LinkResponse): F[Unit]
-  def deleteLink(id: Long, link: Uri): F[Unit]
+  def save(chatId: Long, url: Uri, settings: Settings): F[LinkInfo]
+
+  def delete(chatId: Long, url: Uri): F[LinkInfo]
+
+  def allLinks: F[List[Link]]
+  
+  def allInfosFor(url: Uri): F[List[LinkInfo]]
+
+  def get(chatId: Long, url: Uri): F[LinkInfo]
 }
 
 object LinkRepository {
-  class LinkNotFoundException extends Exception
+  final private class InMemory(using repo: Ref[IO, Set[LinkInfo]], lastId: Ref[IO, Long]) extends LinkRepository[IO] {
+    override def save(chatId: Long, url: Uri, settings: Settings): IO[LinkInfo] =
+      for {
+        r <- repo.get
+        _ <- if (r.exists(info => (chatId == info.chatId) && (url == info.link.url))) IO.raiseError(SaveError()) else IO(())
+        i <- lastId.get
+        id = i + 1
+        info <- r.find(url == _.link.url) match
+          case Some(LinkInfo(link, _, _, _)) =>
+            val info = LinkInfo(link, chatId, settings, None)
+            repo.update(r => r + info) >> IO(info)
 
-  final private case class InMemory(
-      repo: Ref[IO, InMemoryRepo]
-  ) extends LinkRepository[IO] {
-    def getLinkByUrl(url: Uri): IO[LinkResponse] =
-      repo.get.map(r =>
-        if (!r.links.contains(url)) throw LinkNotFoundException()
+          case None =>
+            for {
+              i <- lastId.get
+              id = i + 1
+              info = LinkInfo(Link(id, url), chatId, settings, None)
+              _ <- repo.update(r => r + info)
+              _ <- lastId.update(_ + 1)
+            } yield info
+      } yield info
 
-        r.links(url)
-      )
+    override def delete(chatId: Long, url: Uri): IO[LinkInfo] =
+      for {
+        r <- repo.get
+        existingLink <- r.find(info => (chatId == info.chatId) && (url == info.link.url)) match
+          case Some(link) => repo.update(_ - link) >> IO(link)
+          case None => IO.raiseError(LinkNotFound(url))
+      } yield existingLink
 
-    def getLinks(id: Long): IO[List[LinkResponse]] =
-      repo.get.map(r =>
-        if (!r.chatToLinks.contains(id)) throw ChatNotFoundException()
+    override def allLinks: IO[List[Link]] =
+      for r <- repo.get
+        yield r.map(_.link).toList.distinct
 
-        r.chatToLinks(id).toList.map(r.links(_))
-      )
+    override def allInfosFor(url: Uri): IO[List[LinkInfo]] =
+      for r <- repo.get
+        yield r.collect{case info if info.link.url == url => info}.toList
 
-    def addLink(id: Long, link: LinkResponse): IO[Unit] =
-      repo.update(r =>
-        if (!r.chatToLinks.contains(id)) throw ChatNotFoundException()
-
-        InMemoryRepo(
-          r.links + (link.url       -> link),
-          r.chatToLinks + (id       -> Set(link.url)),
-          r.linkToChats + (link.url -> Set(id))
-        )
-      )
-
-    def deleteLink(id: Long, link: Uri): IO[Unit] =
-      repo.update(r => {
-        val chatLinks = r.chatToLinks.getOrElse(id, throw ChatNotFoundException())
-        if (!chatLinks.contains(link)) throw LinkNotFoundException()
-
-        InMemoryRepo(
-          if ((r.chatToLinks(id) - link).isEmpty) r.links - link
-          else r.links,
-          r.chatToLinks.updated(id, r.chatToLinks(id) - link),
-          if ((r.linkToChats(link) - id).isEmpty) r.linkToChats - link
-          else r.linkToChats.updated(link, r.linkToChats(link) - id)
-        )
-      })
-
+    override def get(chatId: Long, url: Uri): IO[LinkInfo] =
+      for {
+        r <- repo.get
+        link <- r.find(info => (chatId == info.chatId) && (url == info.link.url)) match
+          case Some(v) => IO(v)
+          case _ => IO.raiseError(LinkNotFound(url))
+      } yield link
   }
 
-  def makeInMemory(repo: Ref[IO, InMemoryRepo]): LinkRepository[IO] = InMemory(repo)
+  def makeInMemory(using Ref[IO, Set[LinkInfo]]): IO[LinkRepository[IO]] =
+    for given Ref[IO, Long] <- Ref.of[IO, Long](0)
+      yield InMemory()
 }
