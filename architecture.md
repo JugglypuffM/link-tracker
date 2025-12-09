@@ -1,3 +1,4 @@
+## Диаграмма контекста системы:
 ```plantuml
 @startuml
 !include  https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
@@ -29,3 +30,17 @@ Rel_R(scrapper, other, "Check update", "REST")
 Rel_U(notifier, front, "Send notification", "REST/FCM/APNS")
 @enduml
 ```
+
+## Схема таблицы пользователей
+| Поле     | Тип    | Атрибуты    |
+|----------|--------|-------------|
+| id       | long   | primary key |
+| login    | string | not null    |
+| password | string | not null    |
+
+## Схема таблицы настроек
+| Поле    | Тип    | Атрибуты    |
+|---------|--------|-------------|
+| id      | long   | primary key |
+| ownerId | long   | foreign key |
+| link    | string | not null    |
