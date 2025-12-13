@@ -3,10 +3,10 @@ import sbt.*
 object Dependencies {
   // cats
   val catsCore   = "org.typelevel" %% "cats-core"   % "2.13.0"
-  val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.7"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "3.6.3"
 
   // tapir
-  val tapirVersion = "1.11.13"
+  val tapirVersion = "1.13.3"
 
   val tapirHttp4s     = "com.softwaremill.sttp.tapir" %% "tapir-http4s-server"     % tapirVersion
   val tapirSwagger    = "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion
@@ -14,32 +14,43 @@ object Dependencies {
   val tapirSttpClient = "com.softwaremill.sttp.tapir" %% "tapir-sttp-client"       % tapirVersion
 
   // http4s
-  val http4sVersion = "0.23.30"
+  val http4sVersion = "0.23.33"
 
   val http4sServer = "org.http4s" %% "http4s-ember-server" % http4sVersion
   val http4sDsl    = "org.http4s" %% "http4s-dsl"          % http4sVersion
 
   // sttp
-  val sttpVersion = "3.10.2"
+  val sttpVersion = "3.11.0"
 
   val sttpCore = "com.softwaremill.sttp.client3" %% "core" % sttpVersion
   val sttpCats = "com.softwaremill.sttp.client3" %% "cats" % sttpVersion
 
   // logback
-  val logback = "ch.qos.logback" % "logback-classic" % "1.5.16"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.5.22"
 
   // tethys
-  val tethysVersion = "0.29.3"
+  val tethysVersion = "0.29.7"
 
   val tethysCore       = "com.tethys-json" %% "tethys-core"       % tethysVersion
   val tethysJackson    = "com.tethys-json" %% "tethys-jackson213" % tethysVersion
   val tethysDerivation = "com.tethys-json" %% "tethys-derivation" % tethysVersion
 
   // pureconfig
-  val pureConfigVersion = "0.17.8"
+  val pureConfigVersion = "0.17.9"
 
-  val pureConfigCore    = "com.github.pureconfig" %% "pureconfig-core"           % pureConfigVersion
-  val pureConfigGeneric = "com.github.pureconfig" %% "pureconfig-generic-scala3" % pureConfigVersion
+  val pureConfigCore = "com.github.pureconfig" %% "pureconfig-core" % pureConfigVersion
+
+  // canoe
+  val canoeVersion = "0.6.0"
+
+  val canoe = "org.augustjune" %% "canoe" % canoeVersion
+
+  // tofu
+  val tofuVersion = "0.14.0"
+
+  val tofuLogging = "tf.tofu" %% "tofu-logging" % tofuVersion
+  val tofuLoggingDerivation = "tf.tofu" %% "tofu-logging-derivation" % tofuVersion
+  val tofuCore = "tf.tofu" %% "tofu-core-ce3" % tofuVersion
 
   val allDeps: Seq[ModuleID] = Seq(
     catsCore,
@@ -57,6 +68,9 @@ object Dependencies {
     tethysJackson,
     tethysDerivation,
     pureConfigCore,
-    pureConfigGeneric
+    canoe,
+    tofuLogging,
+    tofuLoggingDerivation,
+    tofuCore,
   )
 }

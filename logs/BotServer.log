@@ -1,0 +1,9 @@
+{"time":"2025-12-13T20:57:33.461055+05:00","@version":"1","message":"Handling command","logger":"bot.Scenarios","thread_name":"io-compute-4","level":"INFO","level_value":20000}
+{"time":"2025-12-13T20:57:38.724735+05:00","@version":"1","message":"Handling command","logger":"bot.Scenarios","thread_name":"io-compute-2","level":"INFO","level_value":20000}
+{"time":"2025-12-13T20:57:43.34303+05:00","@version":"1","message":"Handling command","logger":"bot.Scenarios","thread_name":"io-compute-0","level":"INFO","level_value":20000}
+{"time":"2025-12-13T20:57:44.771572+05:00","@version":"1","message":"Handling command","logger":"bot.Scenarios","thread_name":"io-compute-1","level":"INFO","level_value":20000}
+{"time":"2025-12-13T20:57:48.723969+05:00","@version":"1","message":"Handling command","logger":"bot.Scenarios","thread_name":"io-compute-1","level":"INFO","level_value":20000}
+{"time":"2025-12-13T21:21:08.001374+05:00","@version":"1","message":"Handling track command","logger":"bot.Scenarios","thread_name":"io-compute-4","level":"INFO","level_value":20000}
+{"time":"2025-12-13T21:21:14.451782+05:00","@version":"1","message":"Handling track command","logger":"bot.Scenarios","thread_name":"io-compute-4","level":"INFO","level_value":20000}
+{"time":"2025-12-13T21:21:19.376618+05:00","@version":"1","message":"Handling track command","logger":"bot.Scenarios","thread_name":"io-compute-8","level":"INFO","level_value":20000}
+{"time":"2025-12-13T21:22:49.714875+05:00","@version":"1","message":"Shutting down connection pool: curAllocated=3 idleQueues.size=1 waitQueue.size=0 maxWaitQueueLimit=256 closed=false","logger":"org.http4s.blaze.client.PoolManager","thread_name":"io-compute-2","level":"INFO","level_value":20000}
