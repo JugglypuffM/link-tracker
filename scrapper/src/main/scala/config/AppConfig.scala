@@ -9,8 +9,7 @@ import sttp.model.Uri
 final case class AppConfig(
     host: Host,
     port: Port,
-    token: String,
-    scrapperUrl: Uri
+    botUrl: Uri
 ) derives ConfigReader
 
 object AppConfig:
