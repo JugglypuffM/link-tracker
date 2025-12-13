@@ -2,7 +2,7 @@ import cats.effect.*
 import config.AppConfig
 import domain.link.LinkInfo
 import domain.telegram.Chat
-import http.clients.{BotClient, GitHubClient, StackOverflowClient}
+import http.clients.GitHubClient
 import http.controller.{LinksController, TgChatController}
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -31,7 +31,7 @@ object ScrapperServer extends IOApp {
       given ChatService[IO]    = ChatService.make
 
       given Ref[IO, Set[LinkInfo]] <- Resource.eval(Ref.of[IO, Set[LinkInfo]](Set.empty))
-      given LinkRepository[IO] <- Resource.eval(LinkRepository.makeInMemory)
+      given LinkRepository[IO]     <- Resource.eval(LinkRepository.makeInMemory)
       given LinkService[IO] = LinkService.make
 
       endpoints = LinksController().endpoints ++ TgChatController().endpoints
@@ -50,11 +50,9 @@ object ScrapperServer extends IOApp {
               info"Swagger available at http://${config.host.toString}:${config.port.toString}/docs"
           )
 
-      given SttpBackend[IO, Any]     <- HttpClientCatsBackend.resource[IO]()
+      given SttpBackend[IO, Any] <- HttpClientCatsBackend.resource[IO]()
       given GitHubClient[IO] = GitHubClient.make
-      given StackOverflowClient[IO] = StackOverflowClient.make
-      given BotClient[IO] = BotClient.make
-      scrapper = Scrapper.make
+      scrapper               = Scrapper.make
 
       _ <- Resource.eval(scrapper.start)
     } yield ()

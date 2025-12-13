@@ -28,7 +28,7 @@ object ChatRepository {
         r <- repo.get
         _ <- r.find(id == _.id) match
           case Some(chat) => repo.update(_ - chat)
-          case None => IO.raiseError(ChatNotFound(id))
+          case None       => IO.raiseError(ChatNotFound(id))
       } yield ()
 
     override def addLink(id: Long, url: Uri): IO[Unit] =
@@ -54,9 +54,9 @@ object ChatRepository {
         r <- repo.get
         links <- r.find(id == _.id) match
           case Some(chat) => IO(chat.links.toList)
-          case None => IO.raiseError(ChatNotFound(id))
+          case None       => IO.raiseError(ChatNotFound(id))
       } yield links
   }
 
-    def makeInMemory(using Ref[IO, Set[Chat]]): ChatRepository[IO] = ImMemory()
+  def makeInMemory(using Ref[IO, Set[Chat]]): ChatRepository[IO] = ImMemory()
 }

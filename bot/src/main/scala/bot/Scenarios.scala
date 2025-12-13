@@ -27,22 +27,21 @@ object Scenarios {
     extends Scenarios[IO] {
     given Logging[IO] = Logging.Make[IO].forService[Scenarios[IO]]
 
-    private val githubRegex        = """https?://github\.com/[^/]+/[^/]+""".r
-    private val stackOverflowRegex = """https?://stackoverflow\.com/questions/\d+/.+""".r
+    private val githubRegex = """https?://github\.com/[^/]+/[^/]+""".r
 
     private def start: Scenario[IO, Unit] =
       for {
         chat   <- Scenario.expect(command(START).chat)
-        _      <- Scenario.eval(infoWith"Handling command" ("chat-id" -> chat.id, "command" -> START))
+        _      <- Scenario.eval(info"Handling command")
         result <- Scenario.eval(scrapper.registerChat(chat.id).attempt)
         _ <- result match {
           case Right(_) =>
             Scenario.eval(
-              infoWith"Succeeded" ("chat-id" -> chat.id, "command" -> START) >> chat.send(REGISTRATION_SUCCESS)
+              info"Succeeded" >> chat.send(REGISTRATION_SUCCESS)
             )
           case Left(_: BadRequestException) =>
             Scenario.eval(
-              errorWith"Failed on scrapper" ("chat-id" -> chat.id, "command" -> START) >> chat.send(UNEXPECTED_ERROR)
+              error"Failed on scrapper" >> chat.send(UNEXPECTED_ERROR)
             )
           case Left(err) =>
             Scenario.eval(
@@ -56,7 +55,7 @@ object Scenarios {
     private def help: Scenario[IO, Unit] =
       for {
         chat <- Scenario.expect(command(Commands.HELP).chat)
-        _    <- Scenario.eval(infoWith"Handling command" ("chat-id" -> chat.id, "command" -> Commands.HELP))
+        _    <- Scenario.eval(info"Handling command")
         _    <- Scenario.eval(chat.send(Replies.HELP))
       } yield ()
 
@@ -65,47 +64,26 @@ object Scenarios {
         _         <- Scenario.eval(chat.send(ENTER_URL))
         stringUrl <- Scenario.expect(text)
         url <-
-          if (githubRegex.matches(stringUrl) || stackOverflowRegex.matches(stringUrl)) Scenario.pure(uri"$stringUrl")
+          if (githubRegex.matches(stringUrl)) Scenario.pure(uri"$stringUrl")
           else askUrl(chat)
-        // Можно еще проверять доступность
       } yield url
 
     private def track: Scenario[IO, Unit] =
-      def askTags(chat: Chat): Scenario[IO, List[String]] =
-        for {
-          _          <- Scenario.eval(chat.send(ENTER_TAGS))
-          stringTags <- Scenario.expect(text).map(_.toLowerCase)
-          tags =
-            if (stringTags == NO) List.empty
-            else stringTags.split(" ").toList
-        } yield tags
-
-      def askFilters(chat: Chat): Scenario[IO, List[String]] =
-        for {
-          _             <- Scenario.eval(chat.send(ENTER_FILTERS))
-          stringFilters <- Scenario.expect(text).map(_.toLowerCase)
-          filters =
-            if (stringFilters == NO) List.empty
-            else stringFilters.split(" ").toList
-        } yield filters
-
       for {
-        chat    <- Scenario.expect(command(TRACK).chat)
-        _       <- Scenario.eval(infoWith"Handling command" ("chat-id" -> chat.id, "command" -> TRACK))
-        url     <- askUrl(chat)
-        tags    <- askTags(chat)
-        filters <- askFilters(chat)
-        result  <- Scenario.eval(scrapper.trackLink(chat.id, AddLinkRequest(url, tags, filters)).attempt)
+        chat   <- Scenario.expect(command(TRACK).chat)
+        _      <- Scenario.eval(info"Handling command")
+        url    <- askUrl(chat)
+        result <- Scenario.eval(scrapper.trackLink(chat.id, AddLinkRequest(url)).attempt)
         _ <- result match {
           case Right(_) =>
-            Scenario.eval(infoWith"Succeeded" ("chat-id" -> chat.id, "command" -> TRACK) >> chat.send(TRACK_SUCCESS))
+            Scenario.eval(info"Succeeded" >> chat.send(TRACK_SUCCESS))
           case Left(_: BadRequestException) =>
             Scenario.eval(
-              errorWith"Failed on scrapper" ("chat-id" -> chat.id, "command" -> TRACK) >> chat.send(UNEXPECTED_ERROR)
+              error"Failed on scrapper >> chat.send(UNEXPECTED_ERROR)"
             )
           case Left(err) =>
             Scenario.eval(
-              errorCauseWith"Failed unexpectedly" (err)("chat-id" -> chat.id, "command" -> TRACK) >> chat.send(
+              errorCause"Failed unexpectedly" (err) >> chat.send(
                 UNEXPECTED_ERROR
               )
             )
@@ -115,25 +93,25 @@ object Scenarios {
     private def untrack: Scenario[IO, Unit] =
       for {
         chat   <- Scenario.expect(command(UNTRACK).chat)
-        _      <- Scenario.eval(infoWith"Handling command" ("chat-id" -> chat.id, "command" -> UNTRACK))
+        _      <- Scenario.eval(info"Handling command")
         url    <- askUrl(chat)
         result <- Scenario.eval(scrapper.untrackLink(chat.id, RemoveLinkRequest(url)).attempt)
         _ <- result match {
           case Right(_) =>
             Scenario.eval(
-              infoWith"Succeeded" ("chat-id" -> chat.id, "command" -> UNTRACK) >> chat.send(UNTRACK_SUCCESS)
+              info"Succeeded" >> chat.send(UNTRACK_SUCCESS)
             )
           case Left(_: LinkNotFoundException) =>
             Scenario.eval(
-              errorWith"Link not found" ("chat-id" -> chat.id, "command" -> UNTRACK) >> chat.send(LINK_NOT_FOUND)
+              error"Link not found" >> chat.send(LINK_NOT_FOUND)
             )
           case Left(_: BadRequestException) =>
             Scenario.eval(
-              errorWith"Failed on scrapper" ("chat-id" -> chat.id, "command" -> UNTRACK) >> chat.send(UNEXPECTED_ERROR)
+              error"Failed on scrapper" >> chat.send(UNEXPECTED_ERROR)
             )
           case Left(err) =>
             Scenario.eval(
-              errorCauseWith"Failed unexpectedly" (err)("chat-id" -> chat.id, "command" -> UNTRACK) >> chat.send(
+              errorCause"Failed unexpectedly" (err) >> chat.send(
                 UNEXPECTED_ERROR
               )
             )
@@ -143,18 +121,18 @@ object Scenarios {
     private def list: Scenario[IO, Unit] =
       for {
         chat          <- Scenario.expect(command(LIST).chat)
-        _             <- Scenario.eval(infoWith"Handling command" ("chat-id" -> chat.id, "command" -> LIST))
+        _             <- Scenario.eval(info"Handling command")
         linksResponse <- Scenario.eval(scrapper.getLinkList(chat.id).attempt)
         _ <- linksResponse match {
           case Right(response) =>
-            Scenario.eval(infoWith"Succeeded"("chat-id" -> chat.id, "command" -> LIST) >> response.links.traverse_(link => chat.send(LINK_LIST_ENTRY(link))))
+            Scenario.eval(info"Succeeded" >> response.links.traverse_(link => chat.send(LINK_LIST_ENTRY(link))))
           case Left(_: BadRequestException) =>
             Scenario.eval(
-              errorWith"Failed on scrapper" ("chat-id" -> chat.id, "command" -> LIST) >> chat.send(UNEXPECTED_ERROR)
+              error"Failed on scrapper" >> chat.send(UNEXPECTED_ERROR)
             )
           case Left(err) =>
             Scenario.eval(
-              errorCauseWith"Failed unexpectedly" (err)("chat-id" -> chat.id, "command" -> LIST) >> chat.send(
+              errorCause"Failed unexpectedly" (err) >> chat.send(
                 UNEXPECTED_ERROR
               )
             )
@@ -164,7 +142,7 @@ object Scenarios {
     def sendUpdate(id: Long, update: LinkUpdate): IO[Unit] =
       for {
         msg <- SendMessage(id, LINK_UPDATE(update)).call
-        _ <- infoWith"Update sent" ("chat-id" -> id, "link" -> update.url.toString, "description" -> update.description)
+        _   <- info"Update ${update.toMsg} sent to $id"
       } yield ()
 
     val botScenarios: List[Scenario[IO, Unit]] =

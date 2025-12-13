@@ -3,7 +3,7 @@ package http.controller.endpoints
 import http.protocol.ApiErrorResponse
 import sttp.model.StatusCode
 import sttp.tapir.*
-import sttp.tapir.json.tethysjson.jsonBody
+import sttp.tapir.json.tethys.*
 
 object TgChatEndpoints {
   val registerEndpoint: Endpoint[Unit, Long, ApiErrorResponse, Unit, Any] =

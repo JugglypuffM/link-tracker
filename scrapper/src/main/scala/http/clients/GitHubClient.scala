@@ -1,7 +1,7 @@
 package http.clients
 
 import cats.effect.{IO, Resource}
-import domain.scrapper.CheckResult.GitHub.GitHubResult
+import domain.scrapper.CheckResult.GitHubResult
 import sttp.client3.*
 import tethys.*
 import tethys.jackson.*
@@ -37,6 +37,6 @@ object GitHubClient {
               >> IO.raiseError(err)
       } yield update
   }
-  
+
   def make(using SttpBackend[IO, Any], Logging.Make[IO]): GitHubClient[IO] = Impl()
 }

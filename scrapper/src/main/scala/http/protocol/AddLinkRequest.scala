@@ -1,13 +1,10 @@
 package http.protocol
 
+import http.protocol.codec.UriCodec.given
 import sttp.model.Uri
 import sttp.tapir.Schema
-import http.protocol.codec.Uri.given
 import tethys.*
-import tethys.jackson.*
 
 case class AddLinkRequest(
     url: Uri,
-    tags: List[String],
-    filters: List[String]
 ) derives Schema, JsonReader, JsonWriter

@@ -16,9 +16,7 @@ object Replies {
 
   val TRACK_SUCCESS = "Ссылка успешно добавлена в отслеживаемые"
 
-  val ENTER_URL     = "Введи ссылку на репозиторий Github или вопрос StackOverflow"
-  val ENTER_TAGS    = "Добавь тэги"
-  val ENTER_FILTERS = "Укажи фильтры"
+  val ENTER_URL = "Введи ссылку на репозиторий Github или вопрос StackOverflow"
 
   val UNTRACK_SUCCESS = "Ссылка успешна удалена из отслеживаемых"
 
@@ -30,10 +28,5 @@ object Replies {
     s"По ссылке ${update.url} пришло обновление: ${update.description}"
 
   def LINK_LIST_ENTRY(link: LinkResponse): String =
-    s"Ссылка: ${link.url}" + System.lineSeparator() +
-      s"Тэги: ${link.tags.mkString(", ")}" + System.lineSeparator() +
-      s"Фильтры: ${link.filters.mkString(", ")}"
-  //  Пока нереализуемо
-  //  val UNKNOWN_COMMAND = "Неизвестная команда"
-  //  val SCENARIO_INTERRUPTION = "Выполнение прервано"
+    s"Ссылка: ${link.url}"
 }

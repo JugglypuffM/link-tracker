@@ -4,7 +4,7 @@ import domain.*
 import http.protocol.{AddLinkRequest, ApiErrorResponse, LinkListResponse, LinkResponse, RemoveLinkRequest}
 import sttp.model.StatusCode
 import sttp.tapir.*
-import sttp.tapir.json.tethysjson.jsonBody
+import sttp.tapir.json.tethys.*
 
 object LinksEndpoints {
   val getEndpoint: Endpoint[Unit, Long, ApiErrorResponse, LinkListResponse, Any] =

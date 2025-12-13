@@ -1,6 +1,6 @@
 package http.protocol
 
-import http.protocol.codec.Uri.given
+import http.protocol.codec.UriCodec.given
 import sttp.model.Uri
 import sttp.tapir.Schema
 import tethys.*
@@ -12,4 +12,3 @@ final case class LinkUpdate(
     description: String,
     tgChatIds: List[Long]
 ) derives Schema, JsonReader, JsonWriter
-

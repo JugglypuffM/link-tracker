@@ -2,7 +2,6 @@ package service
 
 import cats.effect.IO
 import cats.implicits.toTraverseOps
-import domain.link.Settings
 import http.protocol.{AddLinkRequest, LinkResponse, RemoveLinkRequest}
 import repository.{ChatRepository, LinkRepository}
 
@@ -14,27 +13,26 @@ trait LinkService[F[_]] {
 
 object LinkService {
   final private class Impl(using
-                            linkRepo: LinkRepository[IO], 
-                            chatRepo: ChatRepository[IO],
-                          ) extends LinkService[IO] {
+      linkRepo: LinkRepository[IO],
+      chatRepo: ChatRepository[IO],
+  ) extends LinkService[IO] {
     override def getLinksForChat(chatId: Long): IO[List[LinkResponse]] =
-      for{
-        urls <- chatRepo.allLinksFor(chatId)
+      for {
+        urls  <- chatRepo.allLinksFor(chatId)
         links <- urls.traverse(url => linkRepo.get(chatId, url))
-        responses = links.map(info => LinkResponse(info.link.id, info.link.url, info.settings.tags, info.settings.filters))
+        responses = links.map(info => LinkResponse(info.link.id, info.link.url))
       } yield responses
-      
-    
+
     override def trackLinkByChat(chatId: Long, request: AddLinkRequest): IO[LinkResponse] =
       for {
-        link <- linkRepo.save(chatId, request.url, Settings(request.tags, request.filters))
-        _ <- chatRepo.addLink(chatId, request.url)
+        link <- linkRepo.save(chatId, request.url)
+        _    <- chatRepo.addLink(chatId, request.url)
       } yield link.toLinkResponse
 
     override def deleteTrackingForChat(chatId: Long, request: RemoveLinkRequest): IO[LinkResponse] =
       for {
         link <- linkRepo.delete(chatId, request.link)
-        _ <- chatRepo.removeLink(chatId, request.link)
+        _    <- chatRepo.removeLink(chatId, request.link)
       } yield link.toLinkResponse
   }
 

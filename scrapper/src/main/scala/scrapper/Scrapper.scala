@@ -5,7 +5,7 @@ import cats.implicits.{catsSyntaxParallelTraverse1, toTraverseOps}
 import config.AppConfig
 import domain.link.{Link, LinkInfo}
 import domain.scrapper.{CheckInfo, CheckResult}
-import http.clients.{BotClient, GitHubClient, StackOverflowClient}
+import http.clients.GitHubClient
 import http.protocol.LinkUpdate
 import repository.{ChatRepository, LinkRepository}
 import tofu.logging.Logging
@@ -26,35 +26,32 @@ object Scrapper {
       chatRepository: ChatRepository[IO],
       linkRepository: LinkRepository[IO],
       gitHubClient: GitHubClient[IO],
-      stackOverflowClient: StackOverflowClient[IO],
-      botClient: BotClient[IO],
       lm: Logging.Make[IO]
   ) extends Scrapper[IO] {
     given Logging[IO] = Logging.Make[IO].forService[Scrapper[IO]]
 
     private val gitHubRepoRegex = """https?://github\.com/([^/]+)/([^/]+)""".r
-    private val stackOverflowQuestionRegex =
-      """https?://(?:www\.)?stackoverflow\.com/questions/(\d+)(?:/[^/\s]+)?(?:\?.*)?$""".r
 
     private def checkUpdate(uniqueLink: Link): IO[CheckInfo] =
       for {
-        _ <- infoWith"Checking for update" ("link" -> uniqueLink.url.toString)
+        _ <- info"Checking updates for link ${uniqueLink.url.toString}"
 
         result: CheckResult <- uniqueLink.url.toString match
-          case gitHubRepoRegex(owner, repo)           => gitHubClient.getRepoInfo(owner, repo)
-          case stackOverflowQuestionRegex(questionId) => stackOverflowClient.getAllAnswers(questionId)
-          case _ => errorWith"Unexpected link domain" ("link" -> uniqueLink.url.toString)
+          case gitHubRepoRegex(owner, repo) => gitHubClient.getRepoInfo(owner, repo)
+          case _ =>
+            error"Unexpected link domain for link ${uniqueLink.url.toString}"
               >> IO.raiseError(InvalidLinkError())
 
-        _ <- infoWith"Check complete" ("link" -> uniqueLink.url.toString, "result" -> result.toString)
+        _ <- info"Check complete for link ${uniqueLink.url.toString} with result ${result.toString}"
       } yield CheckInfo(uniqueLink, result)
 
     private def processCheck(update: CheckInfo): IO[LinkUpdate] =
       for {
         infos <- linkRepository.allInfosFor(update.link.url)
-        updated = infos.collect { case info if info.lastUpdatedAt.exists(date => update.result.lastUpdate.isAfter(date)) => info }
-        filtered = updated.collect { case info if !update.result.toDescription.contains(info.settings) => info }
-        chats = filtered.map(_.chatId)
+        updated = infos.collect {
+          case info if info.lastUpdatedAt.exists(date => update.result.lastUpdate.isAfter(date)) => info
+        }
+        chats = updated.map(_.chatId)
       } yield LinkUpdate(
         update.link.id,
         update.link.url,
@@ -65,12 +62,12 @@ object Scrapper {
     override def start: IO[Unit] =
       def loop: IO[Unit] =
         for {
-          links    <- linkRepository.allLinks
+          links   <- linkRepository.allLinks
           checks  <- links.traverse(link => checkUpdate(link))
           updates <- checks.traverse(processCheck)
-          _        <- updates.parTraverse(botClient.sendUpdate)
-          _        <- IO.sleep(2.seconds)
-          _        <- loop
+          _       <- updates.parTraverse(_ => info"Some update sending logic")
+          _       <- IO.sleep(2.seconds)
+          _       <- loop
         } yield ()
 
       loop
@@ -81,8 +78,6 @@ object Scrapper {
       ChatRepository[IO],
       LinkRepository[IO],
       GitHubClient[IO],
-      StackOverflowClient[IO],
-      BotClient[IO],
       Logging.Make[IO]
   ): Scrapper[IO] = Impl()
 }
