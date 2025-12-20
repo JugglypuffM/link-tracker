@@ -52,6 +52,23 @@ object Dependencies {
   val tofuLoggingDerivation = "tf.tofu" %% "tofu-logging-derivation" % tofuVersion
   val tofuCore = "tf.tofu" %% "tofu-core-ce3" % tofuVersion
 
+  // liquibase
+  val liquibaseVersion = "5.0.1"
+
+  val liquibase = "org.liquibase" % "liquibase-core" % liquibaseVersion
+
+  // postgresql jdbc driver
+  val psqlVersion = "42.7.8"
+
+  val psql = "org.postgresql" % "postgresql" % psqlVersion
+
+  // doobie
+  val doobieVersion = "1.0.0-RC11"
+
+  val doobieCore = "org.tpolecat" %% "doobie-core"      % doobieVersion
+  val doobiePostgres = "org.tpolecat" %% "doobie-postgres"  % doobieVersion
+  val doobieHikari = "org.tpolecat" %% "doobie-hikari"    % doobieVersion
+
   val allDeps: Seq[ModuleID] = Seq(
     catsCore,
     catsEffect,
@@ -72,5 +89,10 @@ object Dependencies {
     tofuLogging,
     tofuLoggingDerivation,
     tofuCore,
+    liquibase,
+    psql,
+    doobieCore,
+    doobiePostgres,
+    doobieHikari,
   )
 }

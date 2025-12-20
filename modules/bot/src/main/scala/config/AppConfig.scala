@@ -1,0 +1,18 @@
+package config
+
+import cats.effect.IO
+import com.comcast.ip4s.{Host, Port}
+import pureconfig.{ConfigReader, ConfigSource}
+import sttp.client3.UriContext
+import sttp.model.Uri
+
+final case class AppConfig(
+    token: String,
+    scrapperUrl: Uri
+) derives ConfigReader
+
+object AppConfig:
+  def load: IO[AppConfig] =
+    IO.delay(ConfigSource.default.loadOrThrow[AppConfig])
+
+  given ConfigReader[Uri] = ConfigReader[String].map(str => uri"$str")

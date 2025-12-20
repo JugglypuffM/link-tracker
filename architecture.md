@@ -23,16 +23,10 @@ Rel_U(scrapper, telegram, "Send update info", "Kafka")
 @enduml
 ```
 
-## Схема таблицы пользователей
-| Поле     | Тип    | Атрибуты    |
-|----------|--------|-------------|
-| id       | long   | primary key |
-| login    | string | not null    |
-| password | string | not null    |
-
 ## Схема таблицы настроек
-| Поле    | Тип    | Атрибуты    |
-|---------|--------|-------------|
-| id      | long   | primary key |
-| ownerId | long   | foreign key |
-| link    | string | not null    |
+| Поле      | Тип       | Атрибуты    |
+|-----------|-----------|-------------|
+| id        | long      | primary key |
+| ownerId   | long      | foreign key |
+| link      | string    | not null    |
+| updatedAt | timestamp | not null    |
