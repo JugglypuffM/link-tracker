@@ -5,6 +5,7 @@ import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import http.clients.GitHubClient
 import http.controller.LinksController
+import kafka.UpdateProducer
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import repository.SettingRepository
@@ -62,7 +63,8 @@ object ScrapperServer extends IOApp {
 
       given SttpBackend[IO, Any] <- HttpClientCatsBackend.resource[IO]()
       given GitHubClient[IO] = GitHubClient.make
-      scrapper               = Scrapper.make
+      given UpdateProducer[IO] <- UpdateProducer.make
+      scrapper = Scrapper.make
 
       _ <- Resource.eval(scrapper.start)
     } yield ()

@@ -1,6 +1,7 @@
 package bot
 
-import http.protocol.{LinkResponse, LinkUpdate}
+import http.protocol.LinkResponse
+import kafka.protocol.LinkUpdate
 
 object Replies {
   val HELP: String = """
