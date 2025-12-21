@@ -11,7 +11,8 @@ import cats.effect.IO
 import cats.syntax.all.*
 import http.clients.ScrapperClient
 import ScrapperClient.{BadRequestException, LinkNotFoundException}
-import http.protocol.{AddLinkRequest, LinkUpdate, RemoveLinkRequest}
+import http.protocol.{AddLinkRequest, RemoveLinkRequest}
+import kafka.protocol.LinkUpdate
 import sttp.client3.UriContext
 import sttp.model.Uri
 import tofu.logging.Logging
@@ -107,7 +108,7 @@ object Scenarios {
     def sendUpdate(id: Long, update: LinkUpdate): IO[Unit] =
       for {
         msg <- SendMessage(id, LINK_UPDATE(update)).call
-        _   <- info"Update ${update.toMsg} sent to $id"
+        _   <- info"Update ${update.toMessage} sent to $id"
       } yield ()
 
     val botScenarios: List[Scenario[IO, Unit]] =

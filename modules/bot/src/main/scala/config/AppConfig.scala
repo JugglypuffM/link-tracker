@@ -2,13 +2,15 @@ package config
 
 import cats.effect.IO
 import com.comcast.ip4s.{Host, Port}
+import config.kafka.KafkaConfig
 import pureconfig.{ConfigReader, ConfigSource}
 import sttp.client3.UriContext
 import sttp.model.Uri
 
 final case class AppConfig(
     token: String,
-    scrapperUrl: Uri
+    scrapperUrl: Uri,
+    kafka: KafkaConfig,
 ) derives ConfigReader
 
 object AppConfig:

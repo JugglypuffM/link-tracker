@@ -69,6 +69,21 @@ object Dependencies {
   val doobiePostgres = "org.tpolecat" %% "doobie-postgres"  % doobieVersion
   val doobieHikari = "org.tpolecat" %% "doobie-hikari"    % doobieVersion
 
+  // fs2
+  val fs2Version = "3.12.2"
+
+  val fs2 = "co.fs2" %% "fs2-core" % fs2Version
+
+  // fs2 kafka
+  val fs2KafkaVersion = "3.9.1"
+
+  val fs2Kafka = "com.github.fd4s" %% "fs2-kafka" % fs2KafkaVersion
+
+  //kafka
+  val kafkaVersion = "4.1.1"
+
+  val kafka = "org.apache.kafka" % "kafka-clients" % kafkaVersion
+
   val allDeps: Seq[ModuleID] = Seq(
     catsCore,
     catsEffect,
@@ -94,5 +109,8 @@ object Dependencies {
     doobieCore,
     doobiePostgres,
     doobieHikari,
+    fs2,
+    fs2Kafka,
+    kafka,
   )
 }

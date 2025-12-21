@@ -3,6 +3,7 @@ import canoe.api.*
 import cats.effect.{IO, IOApp, Resource}
 import config.AppConfig
 import http.clients.ScrapperClient
+import kafka.UpdateConsumer
 import sttp.client3.SttpBackend
 import sttp.client3.httpclient.cats.HttpClientCatsBackend
 import tofu.logging.Logging
@@ -18,6 +19,9 @@ object BotServer extends IOApp.Simple {
       given TelegramClient[IO]   <- TelegramClient[IO](config.token)
       given SttpBackend[IO, Any] <- HttpClientCatsBackend.resource[IO]()
       given ScrapperClient[IO] = ScrapperClient.make
+
+      updateConsumer <- UpdateConsumer.make
+      _              <- Resource.eval(updateConsumer.listenUpdates.compile.drain)
 
       scenarios = Scenarios.make
       _ <- Resource.eval(Bot.polling[IO].follow(scenarios.botScenarios*).compile.drain)
