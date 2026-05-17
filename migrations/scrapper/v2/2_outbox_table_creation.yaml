@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2_outbox_table_creation
+      author: s.klinin
+      changes:
+        - createTable:
+            tableName: outbox
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: owner_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: url
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: TEXT
+                  constraints:
+                    nullable: false
+                  defaultValue: 'PENDING'
+        - addUniqueConstraint:
+            tableName: outbox
+            columnNames: url, updated_at
+            constraintName: uq_outbox_url_time

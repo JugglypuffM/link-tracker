@@ -1,11 +1,9 @@
 import cats.effect.IO
 import pureconfig.{ConfigReader, ConfigSource}
 
-final case class RunnerConfig(
-    url: String,
-    username: String,
-    password: String,
-    migrationsDirectory: String
+case class RunnerConfig(
+    bot: DatabaseConfig,
+    scrapper: DatabaseConfig,
 ) derives ConfigReader
 
 object RunnerConfig {

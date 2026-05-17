@@ -8,7 +8,8 @@ import http.controller.LinksController
 import kafka.UpdateProducer
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
-import repository.SettingRepository
+import outbox.OutboxPublisher
+import repository.ScrapperRepository
 import scrapper.Scrapper
 import service.LinkService
 import sttp.client3.SttpBackend
@@ -42,7 +43,7 @@ object ScrapperServer extends IOApp {
 
       given Transactor[IO] <- initTransactor
 
-      given SettingRepository[IO] = SettingRepository.makeDoobie
+      given ScrapperRepository[IO] = ScrapperRepository.makeDoobie
       given LinkService[IO]       = LinkService.make
 
       endpoints = LinksController().endpoints
@@ -63,10 +64,13 @@ object ScrapperServer extends IOApp {
 
       given SttpBackend[IO, Any] <- HttpClientCatsBackend.resource[IO]()
       given GitHubClient[IO] = GitHubClient.make
-      given UpdateProducer[IO] <- UpdateProducer.make
       scrapper = Scrapper.make
 
-      _ <- Resource.eval(scrapper.start)
+      given UpdateProducer[IO] <- UpdateProducer.make
+      outbox = OutboxPublisher.make
+
+      _ <- Resource.eval(scrapper.start.start)
+      _ <- Resource.eval(outbox.start.compile.drain.start)
     } yield ()
 
     app.useForever

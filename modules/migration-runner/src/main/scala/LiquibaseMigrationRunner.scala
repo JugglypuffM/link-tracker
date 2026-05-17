@@ -8,9 +8,8 @@ import java.io.File
 import java.sql.DriverManager
 
 object LiquibaseMigrationRunner extends IOApp {
-  override def run(args: List[String]): IO[ExitCode] =
+  private def migrateDatabase(config: DatabaseConfig): IO[Unit] =
     for {
-      config <- RunnerConfig.load
       _ <- Resource
         .make(IO.delay {
           DriverManager.getConnection(config.url, config.username, config.password)
@@ -33,5 +32,12 @@ object LiquibaseMigrationRunner extends IOApp {
             liquibase.update("")
           }
         }
+    } yield ()
+  
+  override def run(args: List[String]): IO[ExitCode] =
+    for {
+      config <- RunnerConfig.load
+      _ <- migrateDatabase(config.bot)
+      _ <- migrateDatabase(config.scrapper)
     } yield ExitCode.Success
 }

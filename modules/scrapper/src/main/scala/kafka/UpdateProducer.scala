@@ -7,17 +7,19 @@ import fs2.kafka.*
 import tethys.*
 import tethys.jackson.jacksonTokenWriterProducer
 
+import java.util.UUID
+
 trait UpdateProducer[F[_]] {
   def produce(update: LinkUpdate): F[Unit]
 }
 
 object UpdateProducer {
-  private final case class Impl(producer: KafkaProducer[IO, Long, LinkUpdate])(using config: AppConfig)
+  private final case class Impl(producer: KafkaProducer[IO, UUID, LinkUpdate])(using config: AppConfig)
     extends UpdateProducer[IO] {
     override def produce(update: LinkUpdate): IO[Unit] =
       val record = ProducerRecord(
         topic = config.kafka.topic,
-        key = update.ownerId,
+        key = update.id,
         value = update
       )
 
@@ -25,10 +27,10 @@ object UpdateProducer {
   }
 
   def make(using config: AppConfig): Resource[IO, UpdateProducer[IO]] = {
-    given Serializer[IO, Long]       = Serializer.long
+    given Serializer[IO, UUID]       = Serializer.uuid
     given Serializer[IO, LinkUpdate] = Serializer.lift[IO, LinkUpdate](v => IO.delay(v.asJson.getBytes))
 
-    val settings = ProducerSettings[IO, Long, LinkUpdate].withBootstrapServers(config.kafka.servers)
+    val settings = ProducerSettings[IO, UUID, LinkUpdate].withBootstrapServers(config.kafka.servers)
 
     KafkaProducer.resource(settings).map(Impl.apply)
   }
