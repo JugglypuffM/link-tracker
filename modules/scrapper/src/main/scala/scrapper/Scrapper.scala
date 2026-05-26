@@ -4,17 +4,13 @@ import cats.effect.IO
 import cats.implicits.catsSyntaxParallelTraverse1
 import config.AppConfig
 import domain.link.Setting
-import domain.scrapper.{CheckResult, LinkUpdate}
-import fs2.kafka.{KafkaProducer, ProducerRecord}
 import http.clients.GitHubClient
 import kafka.UpdateProducer
-import repository.SettingRepository
+import repository.ScrapperRepository
 import tofu.logging.Logging
 import tofu.syntax.logging.LoggingInterpolator
 
-import java.time.Instant
 import scala.concurrent.duration.*
-import scala.util.control.NoStackTrace
 
 trait Scrapper[F[_]] {
   def start: IO[Unit]
@@ -22,22 +18,14 @@ trait Scrapper[F[_]] {
 
 object Scrapper {
   final private class Impl(using
-      config: AppConfig,
-      linkRepository: SettingRepository[IO],
-      gitHubClient: GitHubClient[IO],
-      updateProducer: UpdateProducer[IO],
-      lm: Logging.Make[IO]
+                           config: AppConfig,
+                           linkRepository: ScrapperRepository[IO],
+                           gitHubClient: GitHubClient[IO],
+                           lm: Logging.Make[IO]
   ) extends Scrapper[IO] {
     given Logging[IO] = Logging.Make[IO].forService[Scrapper[IO]]
 
     private val gitHubRepoRegex = """https?://github\.com/([^/]+)/([^/]+)""".r
-
-    private def sendUpdate(update: LinkUpdate): IO[Unit] =
-      for {
-        _ <- info"Sending update to ${update.ownerId} about ${update.url.toString}: ${update.description}"
-
-        _ <- updateProducer.produce(update)
-      } yield ()
 
     private def processSettingCheck(setting: Setting): IO[Unit] =
       for {
@@ -51,22 +39,24 @@ object Scrapper {
 
         _ <- info"Check complete for setting ${setting.link.toString} with result ${result.toString}"
 
-        update = LinkUpdate(setting.ownerId, setting.link, result.toDescription)
-
-        _ <- if (result.lastUpdate.isAfter(setting.lastUpdatedAt)) sendUpdate(update) else IO.unit
-
-        _ <- info"Actualizing setting update data"
-
-        _ <- linkRepository.update(setting.id, result.lastUpdate)
+        _ <-
+          if (result.lastUpdate.isAfter(setting.lastUpdatedAt))
+            linkRepository.saveUpdate(setting.link, result.lastUpdate, result.toDescription)
+          else IO.unit
       } yield ()
 
     override def start: IO[Unit] =
       def loop: IO[Unit] =
         for {
-          settings <- linkRepository.allUniqueSettings
-
+          _ <- info"Starting update checking process"
+          settings <-
+            linkRepository.getBatch(100, config.scrapper.linkProcessMilliseconds, config.scrapper.checkIntervalSeconds)
           _ <- settings.parTraverse(processSettingCheck)
-          _ <- IO.sleep(60.seconds)
+          _ <-
+            if (settings.isEmpty)
+              info"No updates found - sleeping for ${config.scrapper.checkIntervalSeconds} seconds" *>
+                IO.sleep(config.scrapper.checkIntervalSeconds.seconds)
+            else IO.unit
           _ <- loop
         } yield ()
 
@@ -74,10 +64,9 @@ object Scrapper {
   }
 
   def make(using
-      AppConfig,
-      SettingRepository[IO],
-      GitHubClient[IO],
-      UpdateProducer[IO],
-      Logging.Make[IO]
+           AppConfig,
+           ScrapperRepository[IO],
+           GitHubClient[IO],
+           Logging.Make[IO]
   ): Scrapper[IO] = Impl()
 }

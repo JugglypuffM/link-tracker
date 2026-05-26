@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1_settings_table_creation
+      author: s.klinin
+      changes:
+        - createTable:
+            tableName: settings
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: owner_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: link
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addAutoIncrement:
+            tableName: settings
+            columnName: id
+            columnDataType: BIGINT
+            startWith: 1
+            incrementBy: 1

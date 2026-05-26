@@ -9,10 +9,13 @@ import config.AppConfig
 import fs2.Stream
 import fs2.kafka.*
 import kafka.protocol.LinkUpdate
+import repository.BotRepository
 import tethys.*
 import tethys.jackson.*
 import tofu.logging.Logging
 import tofu.syntax.location.logging.LoggingInterpolator
+
+import java.util.UUID
 
 trait UpdateConsumer[F[_]] {
   def listenUpdates: Stream[F, Unit]
@@ -20,8 +23,8 @@ trait UpdateConsumer[F[_]] {
 
 object UpdateConsumer {
   private final case class Impl(
-      consumer: KafkaConsumer[IO, Long, LinkUpdate]
-  )(using c: TelegramClient[IO], config: AppConfig, lm: Logging.Make[IO]) extends UpdateConsumer[IO] {
+      consumer: KafkaConsumer[IO, UUID, LinkUpdate]
+  )(using repo: BotRepository[IO], config: AppConfig, lm: Logging.Make[IO]) extends UpdateConsumer[IO] {
     given Logging[IO] = Logging.Make[IO].forService[UpdateConsumer[IO]]
 
     override def listenUpdates: Stream[IO, Unit] = {
@@ -31,16 +34,16 @@ object UpdateConsumer {
           for {
             update <- committable.record.value.pure[IO]
             _ <- info"Processing update on link ${update.url.toString} for ${update.ownerId}: ${update.description}"
-            _ <- SendMessage(update.ownerId, update.toMessage).call
-            _ <- info"Sent update on link ${update.url.toString} for ${update.ownerId}: ${update.description}"
+            _ <- repo.saveUpdate(update.id, update.ownerId, update.url, update.description)
+            _ <- info"Saved to outbox update on link ${update.url.toString} for ${update.ownerId}: ${update.description}"
             _ <- committable.offset.commit
           } yield ()
         }
     }
   }
 
-  def make(using c: TelegramClient[IO], lm: Logging.Make[IO], config: AppConfig): Resource[IO, UpdateConsumer[IO]] = {
-    given Deserializer[IO, Long] = Deserializer.long
+  def make(using repo: BotRepository[IO], lm: Logging.Make[IO], config: AppConfig): Resource[IO, UpdateConsumer[IO]] = {
+    given Deserializer[IO, UUID] = Deserializer.uuid
     given Deserializer[IO, LinkUpdate] = Deserializer.lift[IO, LinkUpdate] { bytes =>
       IO.delay {
         val json = new String(bytes, "UTF-8")
@@ -51,7 +54,7 @@ object UpdateConsumer {
       }
     }
 
-    val settings = ConsumerSettings[IO, Long, LinkUpdate]
+    val settings = ConsumerSettings[IO, UUID, LinkUpdate]
       .withAutoOffsetReset(AutoOffsetReset.Earliest)
       .withBootstrapServers(config.kafka.servers)
       .withGroupId(config.kafka.consumerGroup)

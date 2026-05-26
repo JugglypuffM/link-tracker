@@ -3,7 +3,7 @@ package service
 import cats.effect.IO
 import cats.implicits.toTraverseOps
 import http.protocol.{AddLinkRequest, LinkResponse, RemoveLinkRequest}
-import repository.SettingRepository
+import repository.ScrapperRepository
 
 trait LinkService[F[_]] {
   def getLinksForChat(chatId: Long): F[List[LinkResponse]]
@@ -13,7 +13,7 @@ trait LinkService[F[_]] {
 
 object LinkService {
   final private class Impl(using
-      settingsRepo: SettingRepository[IO],
+                           settingsRepo: ScrapperRepository[IO],
   ) extends LinkService[IO] {
     override def getLinksForChat(chatId: Long): IO[List[LinkResponse]] =
       for {
@@ -32,5 +32,5 @@ object LinkService {
       } yield link.toLinkResponse
   }
 
-  def make(using SettingRepository[IO]): LinkService[IO] = Impl()
+  def make(using ScrapperRepository[IO]): LinkService[IO] = Impl()
 }

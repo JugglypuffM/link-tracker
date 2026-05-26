@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1_settings_add_last_check_time
+      author: s.klinin
+      changes:
+        - addColumn:
+            tableName: settings
+            columns:
+              - column:
+                  name: last_check
+                  type: TIMESTAMPTZ
+        - createIndex:
+            tableName: settings
+            indexName: idx_settings_last_check
+            columns:
+              - column:
+                  name: last_check
