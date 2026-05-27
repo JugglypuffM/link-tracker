@@ -4,6 +4,7 @@ import cats.effect.IO
 import com.comcast.ip4s.{Host, Port}
 import config.kafka.KafkaConfig
 import config.repository.DatabaseConfig
+import config.resilience.ResilienceConfig
 import outbox.OutboxConfig
 import pureconfig.{ConfigReader, ConfigSource}
 import scrapper.ScrapperConfig
@@ -17,6 +18,7 @@ final case class AppConfig(
     kafka: KafkaConfig,
     scrapper: ScrapperConfig,
     outbox: OutboxConfig,
+    resilience: ResilienceConfig
 ) derives ConfigReader
 
 object AppConfig:

@@ -1,5 +1,6 @@
 import cats.effect.*
 import config.AppConfig
+import config.resilience.ResilienceConfig
 import doobie.Transactor
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
@@ -9,6 +10,7 @@ import kafka.UpdateProducer
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import outbox.OutboxPublisher
+import resilience.Resilience
 import repository.ScrapperRepository
 import scrapper.Scrapper
 import service.LinkService
@@ -63,6 +65,7 @@ object ScrapperServer extends IOApp {
           )
 
       given SttpBackend[IO, Any] <- HttpClientCatsBackend.resource[IO]()
+      given Resilience <- Resource.eval(Resilience.make(config.resilience))
       given GitHubClient[IO] = GitHubClient.make
       scrapper = Scrapper.make
 

@@ -5,7 +5,6 @@ import cats.implicits.catsSyntaxParallelTraverse1
 import config.AppConfig
 import domain.link.Setting
 import http.clients.GitHubClient
-import kafka.UpdateProducer
 import repository.ScrapperRepository
 import tofu.logging.Logging
 import tofu.syntax.logging.LoggingInterpolator
@@ -29,20 +28,18 @@ object Scrapper {
 
     private def processSettingCheck(setting: Setting): IO[Unit] =
       for {
-        _ <- info"Checking updates for setting ${setting.link.toString}"
-
-        result <- setting.link.toString match
-          case gitHubRepoRegex(owner, repo) => gitHubClient.getRepoInfo(owner, repo)
+        resultOpt <- setting.link.toString match
+          case gitHubRepoRegex(owner, repo) =>
+            gitHubClient.getRepoInfo(owner, repo)
           case _ =>
             error"Unexpected setting domain for setting ${setting.link.toString}"
               >> IO.raiseError(new Throwable("Unexpected setting domain for setting"))
 
-        _ <- info"Check complete for setting ${setting.link.toString} with result ${result.toString}"
-
-        _ <-
-          if (result.lastUpdate.isAfter(setting.lastUpdatedAt))
+        _ <- resultOpt match
+          case Some(result) if result.lastUpdate.isAfter(setting.lastUpdatedAt) =>
             linkRepository.saveUpdate(setting.link, result.lastUpdate, result.toDescription)
-          else IO.unit
+          case _ =>
+            IO.unit
       } yield ()
 
     override def start: IO[Unit] =

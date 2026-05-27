@@ -1,4 +1,4 @@
-package scrapper
+package config.scrapper
 
 import pureconfig.ConfigReader
 
