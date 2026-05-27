@@ -8,3 +8,6 @@ target
 .idea
 .bsp
 /logs
+/.sbtopts
+/docker-compose.yml
+/.sbt/repositories
