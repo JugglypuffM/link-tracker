@@ -1,0 +1,77 @@
+---
+- name: Deploy Link Tracker
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+    tg_bot_token: "{{ TG_BOT_TOKEN | default('') }}"
+
+  tasks:
+    - name: Validate TG_BOT_TOKEN
+      fail:
+        msg: "TG_BOT_TOKEN is required. Pass it with -e TG_BOT_TOKEN=..."
+      when: tg_bot_token == ''
+
+    - name: Install Docker (apt)
+      apt:
+        name:
+          - docker.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+      become: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker (yum)
+      yum:
+        name:
+          - docker
+          - docker-compose-plugin
+        state: present
+      become: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+      become: yes
+
+    - name: Update TG_BOT_TOKEN in bot.env
+      lineinfile:
+        path: "{{ playbook_dir }}/../../env/bot.env"
+        regexp: "^TG_BOT_TOKEN="
+        line: "TG_BOT_TOKEN={{ tg_bot_token }}"
+        mode: '0600'
+
+    - name: Build and start services
+      community.docker.docker_compose_v2:
+        project_src: "{{ playbook_dir }}/../../"
+        state: present
+        build: true
+        detach: true
+
+    - name: Wait for services to be ready
+      command: docker compose ps --format json
+      args:
+        chdir: "{{ playbook_dir }}/../../"
+      register: compose_ps
+      until: >
+        compose_ps.stdout | from_json | selectattr('State', 'equalto', 'running') | list | length >= 4
+      retries: 30
+      delay: 10
+      changed_when: false
+      failed_when: false
+
+    - name: Show running containers
+      command: docker compose ps
+      args:
+        chdir: "{{ playbook_dir }}/../../"
+      register: docker_ps
+      changed_when: false
+
+    - name: Print container status
+      debug:
+        var: docker_ps.stdout_lines

@@ -1,0 +1,17 @@
+.git
+.gitignore
+.idea
+.vscode
+.bsp/
+.metals/
+*.md
+target/
+**/target/
+**/logs/
+*.log
+.env
+.env.*
+!.env.example
+.sbt/
+.sbt
+**/.sbt/
