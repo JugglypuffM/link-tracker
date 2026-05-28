@@ -53,7 +53,7 @@ object Scrapper {
               >> IO.raiseError(new Throwable("Unexpected setting domain for setting"))
 
         endTime <- IO.realTime
-        duration = (endTime - startTime)
+        duration = endTime - startTime
         _ <- recordMetrics(setting, resultOpt, duration)
       } yield ()
 

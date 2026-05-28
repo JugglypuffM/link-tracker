@@ -41,7 +41,7 @@ object UpdateConsumer {
             _ <- info"Saved to outbox update on link ${update.url.toString} for ${update.ownerId}: ${update.description}"
             _ <- committable.offset.commit
             endTime <- IO.realTime
-            duration = (endTime - startTime)
+            duration = endTime - startTime
             _ <- metrics.notificationCompleted("delivered")
             _ <- metrics.deliveryDuration("delivered", duration)
           } yield ()
