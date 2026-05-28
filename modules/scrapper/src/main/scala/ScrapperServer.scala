@@ -1,4 +1,5 @@
 import cats.effect.*
+import cats.syntax.semigroupk.*
 import config.AppConfig
 import config.resilience.ResilienceConfig
 import doobie.Transactor
@@ -6,6 +7,7 @@ import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import http.clients.GitHubClient
 import http.controller.LinksController
+import io.prometheus.metrics.model.registry.PrometheusRegistry
 import kafka.UpdateProducer
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -21,6 +23,8 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import tofu.logging.Logging
 import tofu.syntax.logging.LoggingInterpolator
 
+import _root_.metrics.{MetricsRoute, ScrapperMetrics}
+
 object ScrapperServer extends IOApp {
   private def initTransactor(using config: AppConfig): Resource[IO, HikariTransactor[IO]] =
     for {
@@ -35,13 +39,14 @@ object ScrapperServer extends IOApp {
     } yield xa
 
   override def run(args: List[String]): IO[ExitCode] =
-    given Logging.Make[IO] = Logging.Make.plain[IO]
-
-    given Logging[IO] = Logging.Make[IO].byName("ScrapperServer")
-
     val app: Resource[IO, Unit] = for {
       config <- Resource.eval(AppConfig.load)
       given AppConfig = config
+      given Logging.Make[IO] = Logging.Make.plain[IO]
+      given Logging[IO] = Logging.Make[IO].byName("ScrapperServer")
+
+      registry <- Resource.eval(IO(new PrometheusRegistry()))
+      given ScrapperMetrics[IO] <- Resource.eval(ScrapperMetrics.make(registry))
 
       given Transactor[IO] <- initTransactor
 
@@ -50,7 +55,8 @@ object ScrapperServer extends IOApp {
 
       endpoints = LinksController().endpoints
       swagger   = SwaggerInterpreter().fromServerEndpoints(endpoints, "ScrapperService", "0.0.1")
-      routes    = Http4sServerInterpreter[IO]().toRoutes(endpoints ++ swagger)
+      metricsRoutes = MetricsRoute(registry)
+      routes    = Http4sServerInterpreter[IO]().toRoutes(endpoints ++ swagger) <+> metricsRoutes
 
       server <-
         EmberServerBuilder
@@ -59,9 +65,10 @@ object ScrapperServer extends IOApp {
           .withPort(config.port)
           .withHttpApp(Router("/" -> routes).orNotFound)
           .build
-          .evalTap(server =>
+          .evalTap(_ =>
             info"Server available at http://${config.host.toString}:${config.port.toString}" *>
-              info"Swagger available at http://${config.host.toString}:${config.port.toString}/docs"
+              info"Swagger available at http://${config.host.toString}:${config.port.toString}/docs" *>
+              info"Metrics available at http://${config.host.toString}:${config.port.toString}/metrics"
           )
 
       given SttpBackend[IO, Any] <- HttpClientCatsBackend.resource[IO]()

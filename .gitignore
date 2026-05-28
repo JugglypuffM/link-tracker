@@ -9,5 +9,6 @@ target
 .bsp
 /logs
 /.sbtopts
-/docker-compose.yml
+/infra/docker-compose.yml
 /.sbt/repositories
+/.nessy

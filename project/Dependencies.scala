@@ -84,6 +84,12 @@ object Dependencies {
 
   val kafka = "org.apache.kafka" % "kafka-clients" % kafkaVersion
 
+  // prometheus
+  val prometheusVersion = "1.3.6"
+
+  val prometheusCore = "io.prometheus" % "prometheus-metrics-core" % prometheusVersion
+  val prometheusExposition = "io.prometheus" % "prometheus-metrics-exposition-formats" % prometheusVersion
+
   val allDeps: Seq[ModuleID] = Seq(
     catsCore,
     catsEffect,
@@ -112,5 +118,7 @@ object Dependencies {
     fs2,
     fs2Kafka,
     kafka,
+    prometheusCore,
+    prometheusExposition,
   )
 }
